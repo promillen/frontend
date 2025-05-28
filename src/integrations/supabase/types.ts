@@ -9,16 +9,152 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      devices: {
+        Row: {
+          created_at: string
+          description: string | null
+          dev_id: string
+          hw_version: string | null
+          iccid: string | null
+          id: string
+          name: string | null
+          sw_version: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          dev_id: string
+          hw_version?: string | null
+          iccid?: string | null
+          id?: string
+          name?: string | null
+          sw_version?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          dev_id?: string
+          hw_version?: string | null
+          iccid?: string | null
+          id?: string
+          name?: string | null
+          sw_version?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      location_data: {
+        Row: {
+          accuracy: number | null
+          altitude: number | null
+          battery_level: number | null
+          created_at: string
+          device_id: string
+          id: string
+          latitude: number
+          longitude: number
+          signal_strength: number | null
+          temperature: number | null
+          timestamp: string
+        }
+        Insert: {
+          accuracy?: number | null
+          altitude?: number | null
+          battery_level?: number | null
+          created_at?: string
+          device_id: string
+          id?: string
+          latitude: number
+          longitude: number
+          signal_strength?: number | null
+          temperature?: number | null
+          timestamp?: string
+        }
+        Update: {
+          accuracy?: number | null
+          altitude?: number | null
+          battery_level?: number | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          signal_strength?: number | null
+          temperature?: number | null
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_data_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +269,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
