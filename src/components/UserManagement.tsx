@@ -1,24 +1,25 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UserProfile {
   id: string;
   email: string;
   full_name: string;
   created_at: string;
+  updated_at: string;
   user_roles: {
-    role: string;
-  } | null;
+    role: 'admin' | 'moderator' | 'user';
+  }[];
 }
 
 const UserManagement = () => {
+  const { role: currentUserRole } = useUserRole();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -32,8 +33,7 @@ const UserManagement = () => {
           user_roles (
             role
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
       if (error) {
         console.error('Error fetching users:', error);
@@ -58,23 +58,30 @@ const UserManagement = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: string) => {
+  const updateUserRole = async (userId: string, newRole: 'admin' | 'moderator' | 'user') => {
     try {
-      // First, try to update existing role
-      const { error: updateError } = await supabase
+      // First, delete existing role
+      await supabase
         .from('user_roles')
-        .update({ role: newRole })
+        .delete()
         .eq('user_id', userId);
 
-      if (updateError) {
-        // If update fails, try to insert new role
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: newRole });
+      // Then insert new role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: newRole
+        });
 
-        if (insertError) {
-          throw insertError;
-        }
+      if (error) {
+        console.error('Error updating user role:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update user role",
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
@@ -94,72 +101,73 @@ const UserManagement = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (currentUserRole === 'admin') {
+      fetchUsers();
+    } else {
+      setLoading(false);
+    }
+  }, [currentUserRole]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-8 w-8 animate-spin" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
+  if (currentUserRole !== 'admin') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Access Denied</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>You don't have permission to access user management.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">User Management</h2>
-        <Button onClick={fetchUsers} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {users.map((user) => (
-          <Card key={user.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {users.map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <CardTitle className="text-lg">{user.full_name || 'No Name'}</CardTitle>
+                  <h3 className="font-semibold">{user.full_name || 'No name'}</h3>
                   <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="text-xs text-gray-500">
+                    Current role: {user.user_roles?.[0]?.role || 'No role assigned'}
+                  </p>
                 </div>
-                <Badge variant="outline" className="capitalize">
-                  {user.user_roles?.role || 'user'}
-                </Badge>
+                <div className="flex items-center space-x-2">
+                  <Select
+                    value={user.user_roles?.[0]?.role || 'user'}
+                    onValueChange={(value: 'admin' | 'moderator' | 'user') => 
+                      updateUserRole(user.id, value)
+                    }
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="moderator">Moderator</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-sm">
-                <p><strong>Joined:</strong> {new Date(user.created_at).toLocaleDateString()}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Role</label>
-                <Select
-                  value={user.user_roles?.role || 'user'}
-                  onValueChange={(value) => updateUserRole(user.id, value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="moderator">Moderator</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {users.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No users found.</p>
-        </div>
-      )}
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
