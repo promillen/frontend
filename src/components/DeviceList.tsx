@@ -382,30 +382,12 @@ const DeviceList = () => {
               const location = latestLocations[device.devid];
               const isEditing = editingDevice === device.devid;
 
-              return (
-                <Card 
-                  key={device.devid} 
-                  className={layout === 'modern' 
-                    ? "group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/50 overflow-hidden relative"
-                    : "hover:shadow-md transition-shadow duration-200"
-                  }
-                >
-                  {/* Status indicator line - only in modern layout */}
-                  {layout === 'modern' && (
-                    <div className={`absolute top-0 left-0 right-0 h-1 ${
-                      getDeviceStatus(device.last_seen) === 'online' ? 'bg-green-500' :
-                      getDeviceStatus(device.last_seen) === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-                    }`} />
-                  )}
-                  
-                  <CardHeader className={layout === 'modern' ? "pb-3" : "pb-2"}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        {layout === 'modern' && (
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                            <Smartphone className="w-6 h-6 text-white" />
-                          </div>
-                        )}
+              if (layout === 'classic') {
+                // Original classic styling
+                return (
+                  <Card key={device.devid} className="hover:shadow-md transition-shadow duration-200">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
                             <div className="flex items-center space-x-2">
@@ -435,9 +417,7 @@ const DeviceList = () => {
                           ) : (
                             <div className="space-y-1">
                               <div className="flex items-center space-x-2">
-                                <CardTitle className={`text-sm font-semibold truncate ${
-                                  layout === 'modern' ? 'group-hover:text-blue-600 transition-colors' : ''
-                                }`}>
+                                <CardTitle className="text-sm font-semibold truncate">
                                   {device.name || device.devid}
                                 </CardTitle>
                                 {(role === 'admin' || role === 'moderator') && (
@@ -445,11 +425,161 @@ const DeviceList = () => {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => handleEditClick(device)}
-                                    className={`h-6 w-6 p-0 ${
-                                      layout === 'modern' 
-                                        ? 'opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110'
-                                        : ''
-                                    }`}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                              <CardDescription className="text-xs truncate font-mono">
+                                ID: {device.devid}
+                              </CardDescription>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end space-y-2">
+                          {getStatusBadge(device)}
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-3">
+                      {/* Battery Level - Simple */}
+                      {device.battery_level !== null && device.battery_level !== undefined && (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium">Battery</span>
+                            <span className={`font-bold ${getBatteryColor(device.battery_level)}`}>
+                              {device.battery_level}%
+                            </span>
+                          </div>
+                          <Progress value={device.battery_level} className="h-1" />
+                        </div>
+                      )}
+
+                      {/* Location and Activity - Simple */}
+                      <div className="space-y-1 text-xs">
+                        {location && (
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              Last location: {formatDanishTime(location.created_at)}
+                            </span>
+                          </div>
+                        )}
+
+                        {device.last_seen && (
+                          <div className="flex items-center space-x-1">
+                            <Clock className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              Last seen: {formatDanishTime(device.last_seen)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Device Info */}
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t text-xs">
+                        <div>
+                          <span className="text-muted-foreground block">Hardware</span>
+                          <div className="font-medium truncate">{device.hw_version || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block">Software</span>
+                          <div className="font-medium truncate">{device.sw_version || 'N/A'}</div>
+                        </div>
+                      </div>
+
+                      {/* Application Mode */}
+                      {(role === 'admin' || role === 'moderator') && (
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="text-xs text-muted-foreground font-medium">Mode:</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-7 px-2 text-xs font-normal"
+                              >
+                                {device.application_mode || 'Select'}
+                                <ChevronDown className="h-3 w-3 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-32">
+                              {applicationModes.map(mode => (
+                                <DropdownMenuItem
+                                  key={mode}
+                                  onClick={() => updateDeviceMode(device.devid, mode)}
+                                  className="text-xs cursor-pointer"
+                                >
+                                  {mode}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              }
+
+              // Modern layout styling
+              return (
+                <Card 
+                  key={device.devid} 
+                  className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/50 overflow-hidden relative"
+                >
+                  {/* Status indicator line */}
+                  <div className={`absolute top-0 left-0 right-0 h-1 ${
+                    getDeviceStatus(device.last_seen) === 'online' ? 'bg-green-500' :
+                    getDeviceStatus(device.last_seen) === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+                  }`} />
+                  
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <Smartphone className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          {isEditing ? (
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                className="h-8 text-sm font-medium border-blue-200 focus:border-blue-500"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleSaveEdit}
+                                className="h-8 w-8 p-0 hover:bg-green-50 hover:border-green-200"
+                              >
+                                <Check className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200"
+                              >
+                                <X className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <CardTitle className="text-sm font-semibold truncate group-hover:text-blue-600 transition-colors">
+                                  {device.name || device.devid}
+                                </CardTitle>
+                                {(role === 'admin' || role === 'moderator') && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditClick(device)}
+                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
                                   >
                                     <Edit2 className="h-3 w-3" />
                                   </Button>
@@ -468,82 +598,72 @@ const DeviceList = () => {
                     </div>
                   </CardHeader>
 
-                  <CardContent className={layout === 'modern' ? "space-y-4" : "space-y-3"}>
-                    {/* Battery Level */}
+                  <CardContent className="space-y-4">
+                    {/* Battery Level with Progress Bar */}
                     {device.battery_level !== null && device.battery_level !== undefined && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium">Battery</span>
+                          <div className="flex items-center space-x-1">
+                            <Zap className="w-3 h-3 text-yellow-500" />
+                            <span className="font-medium">Battery</span>
+                          </div>
                           <span className={`font-bold ${getBatteryColor(device.battery_level)}`}>
                             {device.battery_level}%
                           </span>
                         </div>
-                        {layout === 'modern' ? (
-                          <Progress 
-                            value={device.battery_level} 
-                            className="h-2 bg-gray-100"
-                            style={{
-                              '--progress-foreground': device.battery_level >= 60 ? '#10b981' : 
-                                                     device.battery_level >= 30 ? '#f59e0b' : '#ef4444'
-                            } as React.CSSProperties}
-                          />
-                        ) : (
-                          <Progress value={device.battery_level} className="h-1" />
-                        )}
+                        <Progress 
+                          value={device.battery_level} 
+                          className="h-2 bg-gray-100"
+                          style={{
+                            '--progress-foreground': device.battery_level >= 60 ? '#10b981' : 
+                                                   device.battery_level >= 30 ? '#f59e0b' : '#ef4444'
+                          } as React.CSSProperties}
+                        />
                       </div>
                     )}
 
-                    {/* Location and Activity Info */}
-                    <div className="space-y-2 text-xs">
-                      {location && (
-                        <div className={layout === 'modern' 
-                          ? "flex items-center space-x-2 bg-green-50 p-2 rounded-lg border border-green-100"
-                          : "flex items-center space-x-1"
-                        }>
-                          <MapPin className="w-3 h-3 text-green-600" />
-                          <span className={layout === 'modern' ? "text-green-700 font-medium" : "text-muted-foreground"}>
-                            {layout === 'modern' ? 'Located: ' : ''}
-                            {formatDanishTime(location.created_at)}
-                          </span>
-                        </div>
-                      )}
-
-                      {device.last_seen && (
-                        <div className={layout === 'modern' 
-                          ? "flex items-center space-x-2 bg-blue-50 p-2 rounded-lg border border-blue-100"
-                          : "flex items-center space-x-1"
-                        }>
-                          <Clock className="w-3 h-3 text-blue-600" />
-                          <span className={layout === 'modern' ? "text-blue-700 font-medium" : "text-muted-foreground"}>
-                            {layout === 'modern' ? 'Active: ' : ''}
-                            {formatDanishTime(device.last_seen)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Device Info */}
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t text-xs">
-                      <div>
-                        <span className="text-muted-foreground block">Hardware</span>
-                        <div className="font-medium truncate">{device.hw_version || 'N/A'}</div>
+                    {/* Location Info */}
+                    {location && (
+                      <div className="flex items-center space-x-2 text-xs bg-green-50 p-2 rounded-lg border border-green-100">
+                        <MapPin className="w-3 h-3 text-green-600" />
+                        <span className="text-green-700 font-medium">
+                          Located: {formatDanishTime(location.created_at)}
+                        </span>
                       </div>
-                      <div>
+                    )}
+
+                    {/* Last Activity */}
+                    {device.last_seen && (
+                      <div className="flex items-center space-x-2 text-xs bg-blue-50 p-2 rounded-lg border border-blue-100">
+                        <Clock className="w-3 h-3 text-blue-600" />
+                        <span className="text-blue-700 font-medium">
+                          Active: {formatDanishTime(device.last_seen)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Device Info Grid */}
+                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                      <div className="text-xs">
+                        <span className="text-muted-foreground block">Hardware</span>
+                        <div className="font-medium truncate text-gray-900">{device.hw_version || 'N/A'}</div>
+                      </div>
+                      <div className="text-xs">
                         <span className="text-muted-foreground block">Software</span>
-                        <div className="font-medium truncate">{device.sw_version || 'N/A'}</div>
+                        <div className="font-medium truncate text-gray-900">{device.sw_version || 'N/A'}</div>
                       </div>
                     </div>
 
                     {/* Application Mode */}
                     {(role === 'admin' || role === 'moderator') && (
-                      <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                         <span className="text-xs text-muted-foreground font-medium">Mode:</span>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="h-7 px-2 text-xs font-normal"
+                              className="h-7 px-2 text-xs font-normal hover:bg-blue-50 hover:border-blue-200 transition-colors"
                             >
                               {device.application_mode || 'Select'}
                               <ChevronDown className="h-3 w-3 ml-1" />
@@ -554,7 +674,7 @@ const DeviceList = () => {
                               <DropdownMenuItem
                                 key={mode}
                                 onClick={() => updateDeviceMode(device.devid, mode)}
-                                className="text-xs cursor-pointer"
+                                className="text-xs hover:bg-blue-50 cursor-pointer"
                               >
                                 {mode}
                               </DropdownMenuItem>
