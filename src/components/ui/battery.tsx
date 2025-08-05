@@ -45,12 +45,12 @@ export const Battery: React.FC<BatteryProps> = ({
           {/* Battery Fill */}
           <div 
             className={cn(
-              "absolute bottom-0 left-0 transition-all duration-500 ease-out rounded-sm",
+              "absolute top-0 left-0 h-full transition-all duration-500 ease-out rounded-sm",
               getBatteryColor(normalizedLevel)
             )}
             style={{ 
-              height: `${normalizedLevel}%`,
-              width: '100%'
+              width: `${normalizedLevel}%`,
+              height: '100%'
             }}
           />
         </div>
