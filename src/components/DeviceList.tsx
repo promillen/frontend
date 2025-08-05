@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X, Search } from 'lucide-react';
 import { Battery } from '@/components/ui/battery';
+import { formatInTimeZone } from 'date-fns-tz';
 
 interface DeviceConfig {
   devid: string;
@@ -37,6 +38,7 @@ const DeviceList = () => {
   const [loading, setLoading] = useState(true);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
   const { role } = useUserRole();
 
@@ -176,6 +178,15 @@ const DeviceList = () => {
     }
   };
 
+  const formatDanishTime = (dateString: string) => {
+    return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
+  };
+
+  const filteredDevices = devices.filter(device => 
+    device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    device.devid.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -202,8 +213,18 @@ const DeviceList = () => {
         </div>
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search devices..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {devices.map((device) => {
+        {filteredDevices.map((device) => {
           const location = deviceLocations[device.devid];
           return (
             <Card key={device.devid}>
@@ -279,13 +300,13 @@ const DeviceList = () => {
                     <p><strong>Location:</strong> {(location.data.lat || location.data.latitude).toFixed(4)}, {(location.data.lng || location.data.longitude).toFixed(4)}</p>
                     {location.data.altitude && <p><strong>Altitude:</strong> {location.data.altitude}m</p>}
                     {location.data.accuracy && <p><strong>Accuracy:</strong> {location.data.accuracy}m</p>}
-                    <p><strong>Last Location:</strong> {new Date(location.created_at).toLocaleString()}</p>
+                    <p><strong>Last Location:</strong> {formatDanishTime(location.created_at)}</p>
                   </div>
                 )}
                 
                 {device.last_seen && (
                   <div className="text-sm pt-2 border-t">
-                    <p><strong>Last Seen:</strong> {new Date(device.last_seen).toLocaleString()}</p>
+                    <p><strong>Last Seen:</strong> {formatDanishTime(device.last_seen)}</p>
                   </div>
                 )}
               </CardContent>
@@ -293,6 +314,12 @@ const DeviceList = () => {
           );
         })}
       </div>
+
+      {filteredDevices.length === 0 && devices.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No devices found matching your search.</p>
+        </div>
+      )}
 
       {devices.length === 0 && (
         <div className="text-center py-8">
