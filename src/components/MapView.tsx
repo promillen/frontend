@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import 'leaflet.markercluster';
-import '../styles/map-clusters.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -41,7 +37,7 @@ interface LocationSensorData {
 const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const markersCluster = useRef<L.MarkerClusterGroup | null>(null);
+  const markers = useRef<{ [key: string]: L.Marker }>({});
   const [locations, setLocations] = useState<LocationSensorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,51 +92,38 @@ const MapView = () => {
   };
 
   useEffect(() => {
-    if (!mapRef.current || map.current) return;
+    console.log('MapView: Initializing map...');
+    if (!mapRef.current || map.current) {
+      console.log('MapView: Map already exists or ref not ready', { mapRef: mapRef.current, map: map.current });
+      return;
+    }
 
-    // Initialize map
-    map.current = L.map(mapRef.current).setView([55.6761, 12.5683], 10); // Default to Copenhagen
+    try {
+      console.log('MapView: Creating map instance...');
+      // Initialize map
+      map.current = L.map(mapRef.current).setView([55.6761, 12.5683], 10);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map.current);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map.current);
 
-    // Initialize marker cluster group
-    markersCluster.current = L.markerClusterGroup({
-      chunkedLoading: true,
-      maxClusterRadius: 80,
-      iconCreateFunction: (cluster) => {
-        const childCount = cluster.getChildCount();
-        let className = 'marker-cluster-';
-        
-        if (childCount < 10) {
-          className += 'small';
-        } else if (childCount < 100) {
-          className += 'medium';
-        } else {
-          className += 'large';
-        }
-        
-        return L.divIcon({
-          html: `<div class="cluster-inner">${childCount}</div>`,
-          className: className,
-          iconSize: [40, 40]
-        });
-      }
-    });
-    
-    map.current.addLayer(markersCluster.current);
+      console.log('MapView: Map created successfully');
+    } catch (error) {
+      console.error('MapView: Error initializing map:', error);
+      setError('Failed to initialize map');
+    }
 
     return () => {
+      console.log('MapView: Cleaning up map...');
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
-      markersCluster.current = null;
     };
   }, []);
 
   const fetchLocations = async () => {
+    console.log('MapView: Starting to fetch locations...');
     setLoading(true);
     setError(null);
     
@@ -161,6 +144,8 @@ const MapView = () => {
         .eq('data_type', 'location')
         .order('created_at', { ascending: false });
 
+      console.log('MapView: Supabase query result:', { data, error });
+
       if (error) {
         setError('Failed to fetch device locations');
         console.error('Error fetching locations:', error);
@@ -172,6 +157,7 @@ const MapView = () => {
         return;
       }
 
+      console.log('MapView: Successfully fetched locations:', data?.length || 0);
       setLocations(data || []);
       updateMapMarkers(data || []);
       setLastUpdate(new Date());
@@ -185,14 +171,22 @@ const MapView = () => {
       });
     } finally {
       setLoading(false);
+      console.log('MapView: Finished fetching locations');
     }
   };
 
   const updateMapMarkers = (locationData: LocationSensorData[]) => {
-    if (!map.current || !markersCluster.current) return;
+    console.log('MapView: Updating map markers with data:', locationData?.length || 0);
+    if (!map.current) {
+      console.log('MapView: No map instance available for markers');
+      return;
+    }
 
     // Clear existing markers
-    markersCluster.current.clearLayers();
+    Object.values(markers.current).forEach(marker => {
+      map.current?.removeLayer(marker);
+    });
+    markers.current = {};
 
     // Group locations by device and get latest location for each
     const latestLocations = locationData.reduce((acc, location) => {
@@ -203,6 +197,8 @@ const MapView = () => {
       return acc;
     }, {} as { [key: string]: LocationSensorData });
 
+    console.log('MapView: Processing latest locations:', Object.keys(latestLocations).length);
+
     // Add markers for latest locations
     Object.values(latestLocations).forEach(location => {
       if (!location.data || typeof location.data !== 'object') return;
@@ -211,24 +207,20 @@ const MapView = () => {
       const lat = location.data.lat || location.data.latitude;
       const lng = location.data.lng || location.data.longitude;
       
-      if (!lat || !lng) return;
+      if (!lat || !lng) {
+        console.log('MapView: Skipping location without valid coordinates:', location.devid);
+        return;
+      }
+
+      console.log('MapView: Adding marker for device:', location.devid, 'at', lat, lng);
 
       const deviceConfig = location.device_config;
-      const status = deviceConfig?.last_seen ? getDeviceStatus(deviceConfig.last_seen) : 'offline';
-      const icon = createCustomIcon(status);
 
-      const marker = L.marker([lat, lng], { icon })
+      const marker = L.marker([lat, lng])
+        .addTo(map.current!)
         .bindPopup(`
           <div class="p-3 min-w-[250px]">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold text-lg">${deviceConfig?.name || location.devid}</h3>
-              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                ${status === 'online' ? 'bg-green-100 text-green-800' : 
-                  status === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-red-100 text-red-800'}">
-                ${status.charAt(0).toUpperCase() + status.slice(1)}
-              </span>
-            </div>
+            <h3 class="font-semibold text-lg mb-2">${deviceConfig?.name || location.devid}</h3>
             <div class="space-y-1 text-sm">
               <p><strong>Device ID:</strong> ${location.devid}</p>
               <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
@@ -244,12 +236,16 @@ const MapView = () => {
           </div>
         `);
 
-      markersCluster.current.addLayer(marker);
+      markers.current[location.devid] = marker;
     });
 
+    console.log('MapView: Added markers:', Object.keys(markers.current).length);
+
     // Fit map to show all markers
-    if (markersCluster.current.getLayers().length > 0) {
-      map.current.fitBounds(markersCluster.current.getBounds(), { padding: [20, 20] });
+    if (Object.keys(markers.current).length > 0) {
+      const group = new L.FeatureGroup(Object.values(markers.current));
+      map.current.fitBounds(group.getBounds(), { padding: [20, 20] });
+      console.log('MapView: Fitted map bounds to markers');
     }
   };
 
@@ -288,7 +284,10 @@ const MapView = () => {
     };
   }, []);
 
+  console.log('MapView: Component render state:', { loading, error, isFullscreen });
+
   if (loading) {
+    console.log('MapView: Showing loading skeleton');
     return <LoadingSkeleton type="map" />;
   }
 
