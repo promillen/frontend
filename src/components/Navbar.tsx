@@ -53,15 +53,28 @@ const Navbar = ({ activeView, onViewChange }: NavbarProps) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Layout Toggle */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleLayout}
-              title={`Switch to ${layout === 'classic' ? 'Modern' : 'Classic'} Layout`}
-            >
-              {layout === 'classic' ? <LayoutGrid className="h-4 w-4" /> : <Layout className="h-4 w-4" />}
-            </Button>
+            {/* Layout Toggle with clear labels */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-gray-500">Layout:</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleLayout}
+                className="gap-2"
+              >
+                {layout === 'classic' ? (
+                  <>
+                    <LayoutGrid className="h-4 w-4" />
+                    <span className="hidden sm:inline">Modern</span>
+                  </>
+                ) : (
+                  <>
+                    <Layout className="h-4 w-4" />
+                    <span className="hidden sm:inline">Classic</span>
+                  </>
+                )}
+              </Button>
+            </div>
             
             {role && (
               <Badge variant="outline" className="capitalize">
