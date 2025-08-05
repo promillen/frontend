@@ -367,15 +367,11 @@ const DeviceList = () => {
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-xs">🔋 Battery</span>
                           <div className="flex items-center gap-2">
-                            <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all duration-300 ${
-                                  device.battery_level >= 60 ? 'bg-green-500' : 
-                                  device.battery_level >= 30 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${device.battery_level}%` }}
-                              />
-                            </div>
+                            <Battery 
+                              level={device.battery_level} 
+                              size="md"
+                              className={getBatteryColor(device.battery_level)}
+                            />
                             <span className={`font-medium text-xs ${getBatteryColor(device.battery_level)}`}>
                               {device.battery_level}%
                             </span>
