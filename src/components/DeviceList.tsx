@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X, Battery } from 'lucide-react';
 
 interface DeviceConfig {
   devid: string;
@@ -19,6 +19,7 @@ interface DeviceConfig {
   device_data_updated_at: string;
   last_seen: string;
   created_at: string;
+  battery_level: number;
 }
 
 interface LocationSensorData {
@@ -149,6 +150,16 @@ const DeviceList = () => {
     setEditName('');
   };
 
+  const getBatteryColor = (level: number) => {
+    if (level >= 60) return 'text-green-500';
+    if (level >= 30) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+
+  const getBatteryIcon = (level: number) => {
+    return <Battery className={`h-4 w-4 ${getBatteryColor(level)}`} />;
+  };
+
   const getStatusBadge = (deviceId: string) => {
     const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
@@ -238,7 +249,17 @@ const DeviceList = () => {
                     )}
                     <CardDescription>ID: {device.devid}</CardDescription>
                   </div>
-                  {getStatusBadge(device.devid)}
+                  <div className="flex flex-col items-end gap-2">
+                    {getStatusBadge(device.devid)}
+                    {device.battery_level && (
+                      <div className="flex items-center gap-1 text-sm">
+                        {getBatteryIcon(device.battery_level)}
+                        <span className={getBatteryColor(device.battery_level)}>
+                          {device.battery_level}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
