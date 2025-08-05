@@ -334,7 +334,7 @@ const DeviceList = () => {
                     {(role === 'admin' || role === 'moderator') ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-6 px-2 text-sm">
+                          <Button variant="outline" size="sm" className="h-6 px-2 text-sm font-normal">
                             {device.application_mode || 'Select'}
                             <ChevronDown className="h-3 w-3 ml-1" />
                           </Button>
