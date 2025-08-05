@@ -68,6 +68,7 @@ export type Database = {
           hw_version: string | null
           iccid: string | null
           last_seen: string | null
+          last_uplink_count: number | null
           name: string | null
           sw_version: string | null
         }
@@ -80,6 +81,7 @@ export type Database = {
           hw_version?: string | null
           iccid?: string | null
           last_seen?: string | null
+          last_uplink_count?: number | null
           name?: string | null
           sw_version?: string | null
         }
@@ -92,6 +94,7 @@ export type Database = {
           hw_version?: string | null
           iccid?: string | null
           last_seen?: string | null
+          last_uplink_count?: number | null
           name?: string | null
           sw_version?: string | null
         }
