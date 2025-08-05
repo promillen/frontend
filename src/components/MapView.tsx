@@ -109,15 +109,21 @@ const MapView = () => {
 
     // Add markers for latest locations
     Object.values(latestLocations).forEach(location => {
-      if (!location.data || typeof location.data !== 'object' || !location.data.latitude || !location.data.longitude) return;
+      if (!location.data || typeof location.data !== 'object') return;
+      
+      // Handle both lat/lng and latitude/longitude formats
+      const lat = location.data.lat || location.data.latitude;
+      const lng = location.data.lng || location.data.longitude;
+      
+      if (!lat || !lng) return;
 
-      const marker = L.marker([location.data.latitude, location.data.longitude])
+      const marker = L.marker([lat, lng])
         .addTo(map.current!)
         .bindPopup(`
           <div>
             <h3><strong>${location.device_config?.name || location.devid}</strong></h3>
             <p><strong>Device ID:</strong> ${location.devid}</p>
-            <p><strong>Location:</strong> ${location.data.latitude.toFixed(6)}, ${location.data.longitude.toFixed(6)}</p>
+            <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
             ${location.data.altitude ? `<p><strong>Altitude:</strong> ${location.data.altitude}m</p>` : ''}
             ${location.data.accuracy ? `<p><strong>Accuracy:</strong> ${location.data.accuracy}m</p>` : ''}
             <p><strong>Last Update:</strong> ${new Date(location.created_at).toLocaleString()}</p>
