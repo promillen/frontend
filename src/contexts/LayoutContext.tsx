@@ -11,14 +11,27 @@ interface LayoutContextType {
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export const LayoutProvider = ({ children }: { children: ReactNode }) => {
-  const [layout, setLayout] = useState<LayoutType>('classic'); // Default to working classic layout
+  // Load saved layout preference from localStorage, default to classic
+  const [layout, setLayout] = useState<LayoutType>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('iot-tracker-layout');
+      return (saved as LayoutType) || 'classic';
+    }
+    return 'classic';
+  });
+
+  const handleSetLayout = (newLayout: LayoutType) => {
+    setLayout(newLayout);
+    localStorage.setItem('iot-tracker-layout', newLayout);
+  };
 
   const toggleLayout = () => {
-    setLayout(prev => prev === 'classic' ? 'modern' : 'classic');
+    const newLayout = layout === 'classic' ? 'modern' : 'classic';
+    handleSetLayout(newLayout);
   };
 
   return (
-    <LayoutContext.Provider value={{ layout, setLayout, toggleLayout }}>
+    <LayoutContext.Provider value={{ layout, setLayout: handleSetLayout, toggleLayout }}>
       {children}
     </LayoutContext.Provider>
   );

@@ -44,14 +44,14 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   };
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
+    <Sidebar className="border-r border-sidebar-border layout-transition sidebar-slide-in">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <Activity className="w-4 h-4 text-sidebar-primary-foreground" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
+            <Activity className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
-            <div>
+            <div className="layout-transition">
               <h1 className="font-semibold text-sidebar-foreground">IoT Tracker Hub</h1>
               <p className="text-xs text-sidebar-foreground/60">Device Management</p>
             </div>
@@ -67,11 +67,11 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    className={getNavClassName(item.view)}
+                    className={`${getNavClassName(item.view)} layout-transition hover:scale-[1.02] active:scale-[0.98]`}
                     onClick={() => onViewChange(item.view)}
                   >
                     <item.icon className="w-4 h-4" />
-                    {!collapsed && <span>{item.title}</span>}
+                    {!collapsed && <span className="layout-transition">{item.title}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -87,11 +87,11 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
-                      className={getNavClassName(item.view)}
+                      className={`${getNavClassName(item.view)} layout-transition hover:scale-[1.02] active:scale-[0.98]`}
                       onClick={() => onViewChange(item.view)}
                     >
                       <item.icon className="w-4 h-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="layout-transition">{item.title}</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -104,10 +104,10 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="space-y-3">
           {!collapsed && (
-            <div className="space-y-2">
+            <div className="space-y-2 layout-transition">
               <div className="flex items-center gap-2">
                 {role && (
-                  <Badge variant="outline" className="capitalize text-xs">
+                  <Badge variant="outline" className="capitalize text-xs bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
                     {role}
                   </Badge>
                 )}
@@ -121,10 +121,10 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
             variant="outline"
             size="sm"
             onClick={signOut}
-            className="w-full"
+            className="w-full layout-transition hover:scale-[1.02] active:scale-[0.98]"
           >
             <Settings className="w-4 h-4" />
-            {!collapsed && <span className="ml-2">Sign Out</span>}
+            {!collapsed && <span className="ml-2 layout-transition">Sign Out</span>}
           </Button>
         </div>
       </SidebarFooter>
