@@ -7,93 +7,95 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.4"
+  }
   public: {
     Tables: {
-      devices: {
+      activity: {
         Row: {
-          created_at: string
-          description: string | null
-          dev_id: string
-          hw_version: string | null
-          iccid: string | null
+          created_at: string | null
+          devid: string
+          gnss: number | null
           id: string
-          name: string | null
-          sw_version: string | null
-          updated_at: string
+          modem: number | null
+          other: number | null
+          sleep: number | null
+          uplink_count: number | null
+          wifi: number | null
         }
         Insert: {
-          created_at?: string
-          description?: string | null
-          dev_id: string
-          hw_version?: string | null
-          iccid?: string | null
+          created_at?: string | null
+          devid: string
+          gnss?: number | null
           id?: string
-          name?: string | null
-          sw_version?: string | null
-          updated_at?: string
+          modem?: number | null
+          other?: number | null
+          sleep?: number | null
+          uplink_count?: number | null
+          wifi?: number | null
         }
         Update: {
-          created_at?: string
-          description?: string | null
-          dev_id?: string
-          hw_version?: string | null
-          iccid?: string | null
+          created_at?: string | null
+          devid?: string
+          gnss?: number | null
           id?: string
-          name?: string | null
-          sw_version?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      location_data: {
-        Row: {
-          accuracy: number | null
-          altitude: number | null
-          battery_level: number | null
-          created_at: string
-          device_id: string
-          id: string
-          latitude: number
-          longitude: number
-          signal_strength: number | null
-          temperature: number | null
-          timestamp: string
-        }
-        Insert: {
-          accuracy?: number | null
-          altitude?: number | null
-          battery_level?: number | null
-          created_at?: string
-          device_id: string
-          id?: string
-          latitude: number
-          longitude: number
-          signal_strength?: number | null
-          temperature?: number | null
-          timestamp?: string
-        }
-        Update: {
-          accuracy?: number | null
-          altitude?: number | null
-          battery_level?: number | null
-          created_at?: string
-          device_id?: string
-          id?: string
-          latitude?: number
-          longitude?: number
-          signal_strength?: number | null
-          temperature?: number | null
-          timestamp?: string
+          modem?: number | null
+          other?: number | null
+          sleep?: number | null
+          uplink_count?: number | null
+          wifi?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "location_data_device_id_fkey"
-            columns: ["device_id"]
+            foreignKeyName: "activity_devid_fkey"
+            columns: ["devid"]
             isOneToOne: false
-            referencedRelation: "devices"
-            referencedColumns: ["id"]
+            referencedRelation: "device_config"
+            referencedColumns: ["devid"]
           },
         ]
+      }
+      device_config: {
+        Row: {
+          application_mode: string | null
+          created_at: string | null
+          device_data_updated_at: string | null
+          devid: string
+          heartbeat_interval: number | null
+          hw_version: string | null
+          iccid: string | null
+          last_seen: string | null
+          name: string | null
+          sw_version: string | null
+        }
+        Insert: {
+          application_mode?: string | null
+          created_at?: string | null
+          device_data_updated_at?: string | null
+          devid: string
+          heartbeat_interval?: number | null
+          hw_version?: string | null
+          iccid?: string | null
+          last_seen?: string | null
+          name?: string | null
+          sw_version?: string | null
+        }
+        Update: {
+          application_mode?: string | null
+          created_at?: string | null
+          device_data_updated_at?: string | null
+          devid?: string
+          heartbeat_interval?: number | null
+          hw_version?: string | null
+          iccid?: string | null
+          last_seen?: string | null
+          name?: string | null
+          sw_version?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -118,6 +120,79 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reboot: {
+        Row: {
+          created_at: string | null
+          devid: string
+          file: string | null
+          id: string
+          line: number | null
+          reason: string
+          uplink_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          devid: string
+          file?: string | null
+          id?: string
+          line?: number | null
+          reason: string
+          uplink_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          devid?: string
+          file?: string | null
+          id?: string
+          line?: number | null
+          reason?: string
+          uplink_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reboot_devid_fkey"
+            columns: ["devid"]
+            isOneToOne: false
+            referencedRelation: "device_config"
+            referencedColumns: ["devid"]
+          },
+        ]
+      }
+      sensor_data: {
+        Row: {
+          created_at: string | null
+          data: Json
+          data_type: string
+          devid: string
+          id: string
+          uplink_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          data_type: string
+          devid: string
+          id?: string
+          uplink_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          data_type?: string
+          devid?: string
+          id?: string
+          uplink_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensor_data_devid_fkey"
+            columns: ["devid"]
+            isOneToOne: false
+            referencedRelation: "device_config"
+            referencedColumns: ["devid"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -162,21 +237,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -194,14 +273,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -217,14 +298,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -240,14 +323,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -255,14 +340,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
