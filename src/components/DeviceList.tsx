@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X } from 'lucide-react';
 
 interface DeviceConfig {
   devid: string;
@@ -32,6 +33,8 @@ const DeviceList = () => {
   const [devices, setDevices] = useState<DeviceConfig[]>([]);
   const [deviceLocations, setDeviceLocations] = useState<{ [key: string]: LocationSensorData }>({});
   const [loading, setLoading] = useState(true);
+  const [editingDevice, setEditingDevice] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
   const { toast } = useToast();
   const { role } = useUserRole();
 
@@ -95,6 +98,57 @@ const DeviceList = () => {
     fetchDevices();
   }, []);
 
+  const updateDeviceName = async (devid: string, newName: string) => {
+    try {
+      const { error } = await supabase
+        .from('device_config')
+        .update({ name: newName })
+        .eq('devid', devid);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update device name",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, name: newName } : device
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Device name updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update device name",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditClick = (device: DeviceConfig) => {
+    setEditingDevice(device.devid);
+    setEditName(device.name || device.devid);
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingDevice && editName.trim()) {
+      await updateDeviceName(editingDevice, editName.trim());
+      setEditingDevice(null);
+      setEditName('');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDevice(null);
+    setEditName('');
+  };
+
   const getStatusBadge = (deviceId: string) => {
     const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
@@ -147,8 +201,41 @@ const DeviceList = () => {
             <Card key={device.devid}>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{device.name || device.devid}</CardTitle>
+                  <div className="flex-1">
+                    {editingDevice === device.devid ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="text-lg font-semibold"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit();
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                          autoFocus
+                        />
+                        <Button size="sm" onClick={handleSaveEdit}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{device.name || device.devid}</CardTitle>
+                        {(role === 'admin' || role === 'moderator') && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => handleEditClick(device)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
                     <CardDescription>ID: {device.devid}</CardDescription>
                   </div>
                   {getStatusBadge(device.devid)}
@@ -165,9 +252,9 @@ const DeviceList = () => {
                   )}
                 </div>
                 
-                {location && location.data && typeof location.data === 'object' && location.data.latitude && location.data.longitude && (
+                {location && location.data && typeof location.data === 'object' && (location.data.lat || location.data.latitude) && (location.data.lng || location.data.longitude) && (
                   <div className="text-sm space-y-1 pt-2 border-t">
-                    <p><strong>Location:</strong> {location.data.latitude.toFixed(4)}, {location.data.longitude.toFixed(4)}</p>
+                    <p><strong>Location:</strong> {(location.data.lat || location.data.latitude).toFixed(4)}, {(location.data.lng || location.data.longitude).toFixed(4)}</p>
                     {location.data.altitude && <p><strong>Altitude:</strong> {location.data.altitude}m</p>}
                     {location.data.accuracy && <p><strong>Accuracy:</strong> {location.data.accuracy}m</p>}
                     <p><strong>Last Location:</strong> {new Date(location.created_at).toLocaleString()}</p>
