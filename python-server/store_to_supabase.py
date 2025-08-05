@@ -5,9 +5,12 @@ import logging
 import json
 from typing import Dict, Any, Optional
 
-# Use your current Supabase project credentials
-SUPABASE_URL = "https://cdwtsrzshpotkfbyyyjk.supabase.co"
-SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkd3RzcnpzaHBvdGtmYnl5eWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NjQxNzMsImV4cCI6MjA2NDA0MDE3M30.n6qYEgtmWapgLOyuLva_o6-mBXnxkxIdbVFxxlSEcR4")
+# Use environment variables for Supabase credentials
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_API_KEY = os.getenv("SUPABASE_API_KEY")
+
+if not SUPABASE_URL or not SUPABASE_API_KEY:
+    raise ValueError("SUPABASE_URL and SUPABASE_API_KEY environment variables must be set")
 
 logger = logging.getLogger(__name__)
 
