@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X, Battery } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X } from 'lucide-react';
+import { Battery } from '@/components/ui/battery';
 
 interface DeviceConfig {
   devid: string;
@@ -156,10 +157,6 @@ const DeviceList = () => {
     return 'text-red-500';
   };
 
-  const getBatteryIcon = (level: number) => {
-    return <Battery className={`h-4 w-4 ${getBatteryColor(level)}`} />;
-  };
-
   const getStatusBadge = (deviceId: string) => {
     const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
@@ -253,7 +250,11 @@ const DeviceList = () => {
                     {getStatusBadge(device.devid)}
                     {device.battery_level && (
                       <div className="flex items-center gap-1 text-sm">
-                        {getBatteryIcon(device.battery_level)}
+                        <Battery 
+                          level={device.battery_level} 
+                          size="sm"
+                          className={getBatteryColor(device.battery_level)}
+                        />
                         <span className={getBatteryColor(device.battery_level)}>
                           {device.battery_level}%
                         </span>

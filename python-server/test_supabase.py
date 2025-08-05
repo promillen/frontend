@@ -21,7 +21,8 @@ async def test_device_config():
             "iccid": "89461234567890123456",
             "hw_version": "v1.2.3",
             "sw_version": "v2.1.0",
-            "application_mode": "WIFI"
+            "application_mode": "WIFI",
+            "battery_level": 85
         }
     }
     
