@@ -25,6 +25,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/auth" replace />;
 };
 
+const AuthRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+  
+  // If user is already authenticated, redirect to dashboard
+  return user ? <Navigate to="/" replace /> : <>{children}</>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -33,7 +48,11 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth" element={
+              <AuthRoute>
+                <Auth />
+              </AuthRoute>
+            } />
             <Route path="/" element={
               <ProtectedRoute>
                 <Dashboard />
