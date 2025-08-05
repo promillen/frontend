@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X, Search } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
 import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface DeviceConfig {
   devid: string;
@@ -135,6 +136,39 @@ const DeviceList = () => {
     }
   };
 
+  const updateDeviceMode = async (devid: string, newMode: string) => {
+    try {
+      const { error } = await supabase
+        .from('device_config')
+        .update({ application_mode: newMode })
+        .eq('devid', devid);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update device mode",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, application_mode: newMode } : device
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Device mode updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update device mode",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditClick = (device: DeviceConfig) => {
     setEditingDevice(device.devid);
     setEditName(device.name || device.devid);
@@ -181,6 +215,8 @@ const DeviceList = () => {
   const formatDanishTime = (dateString: string) => {
     return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
   };
+
+  const applicationModes = ['tracking', 'monitoring', 'maintenance', 'standby'];
 
   const filteredDevices = devices.filter(device => 
     device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,21 +322,47 @@ const DeviceList = () => {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="text-sm">
-                  <p><strong>HW Version:</strong> {device.hw_version}</p>
-                  <p><strong>SW Version:</strong> {device.sw_version}</p>
-                  {device.iccid && <p><strong>ICCID:</strong> {device.iccid}</p>}
-                  <p><strong>Mode:</strong> {device.application_mode}</p>
+                  {role === 'admin' && (
+                    <>
+                      <p><strong>HW Version:</strong> {device.hw_version}</p>
+                      <p><strong>SW Version:</strong> {device.sw_version}</p>
+                      {device.iccid && <p><strong>ICCID:</strong> {device.iccid}</p>}
+                    </>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <strong>Mode:</strong>
+                    {(role === 'admin' || role === 'moderator') ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-6 px-2 text-sm">
+                            {device.application_mode || 'Select'}
+                            <ChevronDown className="h-3 w-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-background border shadow-md">
+                          {applicationModes.map((mode) => (
+                            <DropdownMenuItem
+                              key={mode}
+                              onClick={() => updateDeviceMode(device.devid, mode)}
+                              className="hover:bg-accent cursor-pointer"
+                            >
+                              {mode}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <span>{device.application_mode}</span>
+                    )}
+                  </div>
                   {device.heartbeat_interval && (
                     <p><strong>Heartbeat:</strong> {device.heartbeat_interval}s</p>
                   )}
                 </div>
                 
-                {location && location.data && typeof location.data === 'object' && (location.data.lat || location.data.latitude) && (location.data.lng || location.data.longitude) && (
+                {location && location.data && typeof location.data === 'object' && location.data.accuracy && (
                   <div className="text-sm space-y-1 pt-2 border-t">
-                    <p><strong>Location:</strong> {(location.data.lat || location.data.latitude).toFixed(4)}, {(location.data.lng || location.data.longitude).toFixed(4)}</p>
-                    {location.data.altitude && <p><strong>Altitude:</strong> {location.data.altitude}m</p>}
-                    {location.data.accuracy && <p><strong>Accuracy:</strong> {location.data.accuracy}m</p>}
-                    <p><strong>Last Location:</strong> {formatDanishTime(location.created_at)}</p>
+                    {location.data.accuracy && <p><strong>Accuracy:</strong> {parseFloat(location.data.accuracy).toFixed(2)}m</p>}
                   </div>
                 )}
                 
