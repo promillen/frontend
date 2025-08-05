@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,9 @@ import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown } from 'lucide-re
 import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
+import LoadingSkeleton from './LoadingSkeleton';
+import ErrorBoundary from './ErrorBoundary';
 
 interface DeviceConfig {
   devid: string;
@@ -39,7 +42,13 @@ const DeviceList = () => {
   const [loading, setLoading] = useState(true);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<DeviceFilters>({
+    search: '',
+    status: 'all',
+    applicationMode: 'all',
+    batteryRange: [0, 100],
+    dateRange: {},
+  });
   const { toast } = useToast();
   const { role } = useUserRole();
 
@@ -223,41 +232,42 @@ const DeviceList = () => {
     device.devid.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const availableModes = useMemo(() => {
+    const modes = devices.map(device => device.application_mode).filter(Boolean);
+    return [...new Set(modes)];
+  }, [devices]);
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <LoadingSkeleton type="list" count={6} />;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Devices</h2>
-        <div className="flex gap-2">
-          <Button onClick={fetchDevices} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          {(role === 'admin' || role === 'moderator') && (
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Device
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Device Management</h1>
+            <p className="text-muted-foreground">Manage and monitor your IoT devices</p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={fetchDevices} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
             </Button>
-          )}
+            {(role === 'admin' || role === 'moderator') && (
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Device
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search devices..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+        <DeviceFiltersComponent
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableModes={availableModes}
         />
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDevices.map((device) => {
@@ -388,7 +398,8 @@ const DeviceList = () => {
           <p className="text-gray-500">No devices found. Add your first device to get started.</p>
         </div>
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 
