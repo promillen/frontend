@@ -202,19 +202,29 @@ const DeviceList = () => {
     return 'text-red-500';
   };
 
+  const getDeviceStatus = (lastSeen: string | null): 'online' | 'warning' | 'offline' => {
+    if (!lastSeen) return 'offline';
+    
+    const lastUpdate = new Date(lastSeen);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+
+    if (diffMinutes < 30) return 'online';
+    if (diffMinutes < 120) return 'warning';
+    return 'offline';
+  };
+
   const getStatusBadge = (deviceId: string) => {
     const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
       return <Badge variant="secondary">No Data</Badge>;
     }
 
-    const lastUpdate = new Date(device.last_seen);
-    const now = new Date();
-    const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
-
-    if (diffMinutes < 30) {
+    const status = getDeviceStatus(device.last_seen);
+    
+    if (status === 'online') {
       return <Badge variant="default" className="bg-green-500">Online</Badge>;
-    } else if (diffMinutes < 120) {
+    } else if (status === 'warning') {
       return <Badge variant="secondary" className="bg-yellow-500">Warning</Badge>;
     } else {
       return <Badge variant="destructive">Offline</Badge>;
@@ -227,10 +237,41 @@ const DeviceList = () => {
 
   const applicationModes = ['tracking', 'monitoring', 'maintenance', 'standby'];
 
-  const filteredDevices = devices.filter(device => 
-    device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    device.devid.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Apply filters to devices
+  const filteredDevices = useMemo(() => {
+    return devices.filter(device => {
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch = 
+          device.name?.toLowerCase().includes(searchLower) ||
+          device.devid.toLowerCase().includes(searchLower) ||
+          device.iccid?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      // Status filter
+      if (filters.status !== 'all') {
+        const status = getDeviceStatus(device.last_seen);
+        if (status !== filters.status) return false;
+      }
+
+      // Application mode filter
+      if (filters.applicationMode !== 'all') {
+        if (device.application_mode !== filters.applicationMode) return false;
+      }
+
+      // Battery range filter
+      if (device.battery_level !== null && device.battery_level !== undefined) {
+        const battery = device.battery_level;
+        if (battery < filters.batteryRange[0] || battery > filters.batteryRange[1]) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [devices, filters]);
 
   const availableModes = useMemo(() => {
     const modes = devices.map(device => device.application_mode).filter(Boolean);
