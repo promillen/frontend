@@ -319,9 +319,7 @@ const DeviceList = () => {
           if (layout === 'modern') {
             // Enhanced modern layout with glass morphism and gradients
             return (
-              <Card key={device.devid} className="group relative overflow-hidden bg-gradient-to-br from-card/90 to-card/60 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
+              <Card key={device.devid} className="group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="relative">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -330,7 +328,7 @@ const DeviceList = () => {
                           <Input
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
-                            className="text-lg font-semibold bg-background/50 backdrop-blur-sm"
+                            className="text-lg font-semibold"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveEdit();
                               if (e.key === 'Escape') handleCancelEdit();
@@ -346,7 +344,7 @@ const DeviceList = () => {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+                          <CardTitle className="text-lg">
                             {device.name || device.devid}
                           </CardTitle>
                           {(role === 'admin' || role === 'moderator') && (
@@ -354,7 +352,7 @@ const DeviceList = () => {
                               size="sm" 
                               variant="ghost" 
                               onClick={() => handleEditClick(device)}
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-primary/10"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                             >
                               <Edit2 className="h-3 w-3" />
                             </Button>
@@ -366,15 +364,22 @@ const DeviceList = () => {
                     <div className="flex flex-col items-end gap-2">
                       {getStatusBadge(device.devid)}
                       {device.battery_level && (
-                        <div className="flex items-center gap-2 text-sm bg-background/30 backdrop-blur-sm rounded-full px-2 py-1">
-                          <Battery 
-                            level={device.battery_level} 
-                            size="sm"
-                            className={getBatteryColor(device.battery_level)}
-                          />
-                          <span className={`font-medium ${getBatteryColor(device.battery_level)}`}>
-                            {device.battery_level}%
-                          </span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-xs">🔋 Battery</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-300 ${
+                                  device.battery_level >= 60 ? 'bg-green-500' : 
+                                  device.battery_level >= 30 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${device.battery_level}%` }}
+                              />
+                            </div>
+                            <span className={`font-medium text-xs ${getBatteryColor(device.battery_level)}`}>
+                              {device.battery_level}%
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
