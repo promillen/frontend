@@ -26,24 +26,31 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles (
-            role
-          )
-        `);
+    // Fetch profiles first
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*');
 
-      if (error) {
-        console.error('Error fetching users:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch users",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (profilesError) {
+      throw profilesError;
+    }
+
+    // Then fetch user roles for each profile
+    const usersWithRoles = await Promise.all(
+      (profilesData || []).map(async (profile) => {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', profile.id);
+        
+        return {
+          ...profile,
+          user_roles: roles || []
+        };
+      })
+    );
+
+    const data = usersWithRoles;
 
       setUsers(data || []);
     } catch (error) {

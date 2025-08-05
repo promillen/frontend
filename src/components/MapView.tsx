@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -13,19 +12,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-interface LocationData {
+interface LocationSensorData {
   id: string;
-  device_id: string;
-  latitude: number;
-  longitude: number;
-  altitude?: number;
-  accuracy?: number;
-  temperature?: number;
-  battery_level?: number;
-  signal_strength?: number;
-  timestamp: string;
-  devices: {
-    dev_id: string;
+  devid: string;
+  data_type: string;
+  data: any; // JSONB data from Supabase
+  created_at: string;
+  device_config: {
+    devid: string;
     name: string;
     hw_version: string;
     sw_version: string;
@@ -36,7 +30,7 @@ const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef<{ [key: string]: L.Marker }>({});
-  const [locations, setLocations] = useState<LocationData[]>([]);
+  const [locations, setLocations] = useState<LocationSensorData[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,17 +54,18 @@ const MapView = () => {
   const fetchLocations = async () => {
     try {
       const { data, error } = await supabase
-        .from('location_data')
+        .from('sensor_data')
         .select(`
           *,
-          devices (
-            dev_id,
+          device_config (
+            devid,
             name,
             hw_version,
             sw_version
           )
         `)
-        .order('timestamp', { ascending: false });
+        .eq('data_type', 'location')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching locations:', error);
@@ -94,7 +89,7 @@ const MapView = () => {
     }
   };
 
-  const updateMapMarkers = (locationData: LocationData[]) => {
+  const updateMapMarkers = (locationData: LocationSensorData[]) => {
     if (!map.current) return;
 
     // Clear existing markers
@@ -105,33 +100,35 @@ const MapView = () => {
 
     // Group locations by device and get latest location for each
     const latestLocations = locationData.reduce((acc, location) => {
-      const deviceId = location.device_id;
-      if (!acc[deviceId] || new Date(location.timestamp) > new Date(acc[deviceId].timestamp)) {
+      const deviceId = location.devid;
+      if (!acc[deviceId] || new Date(location.created_at) > new Date(acc[deviceId].created_at)) {
         acc[deviceId] = location;
       }
       return acc;
-    }, {} as { [key: string]: LocationData });
+    }, {} as { [key: string]: LocationSensorData });
 
     // Add markers for latest locations
     Object.values(latestLocations).forEach(location => {
-      const marker = L.marker([location.latitude, location.longitude])
+      if (!location.data || typeof location.data !== 'object' || !location.data.latitude || !location.data.longitude) return;
+
+      const marker = L.marker([location.data.latitude, location.data.longitude])
         .addTo(map.current!)
         .bindPopup(`
           <div>
-            <h3><strong>${location.devices.name || location.devices.dev_id}</strong></h3>
-            <p><strong>Device ID:</strong> ${location.devices.dev_id}</p>
-            <p><strong>Location:</strong> ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</p>
-            ${location.altitude ? `<p><strong>Altitude:</strong> ${location.altitude}m</p>` : ''}
-            ${location.temperature ? `<p><strong>Temperature:</strong> ${location.temperature}°C</p>` : ''}
-            ${location.battery_level ? `<p><strong>Battery:</strong> ${location.battery_level}%</p>` : ''}
-            ${location.signal_strength ? `<p><strong>Signal:</strong> ${location.signal_strength}dBm</p>` : ''}
-            <p><strong>Last Update:</strong> ${new Date(location.timestamp).toLocaleString()}</p>
-            <p><strong>HW Version:</strong> ${location.devices.hw_version}</p>
-            <p><strong>SW Version:</strong> ${location.devices.sw_version}</p>
+            <h3><strong>${location.device_config?.name || location.devid}</strong></h3>
+            <p><strong>Device ID:</strong> ${location.devid}</p>
+            <p><strong>Location:</strong> ${location.data.latitude.toFixed(6)}, ${location.data.longitude.toFixed(6)}</p>
+            ${location.data.altitude ? `<p><strong>Altitude:</strong> ${location.data.altitude}m</p>` : ''}
+            ${location.data.accuracy ? `<p><strong>Accuracy:</strong> ${location.data.accuracy}m</p>` : ''}
+            <p><strong>Last Update:</strong> ${new Date(location.created_at).toLocaleString()}</p>
+            ${location.device_config ? `
+              <p><strong>HW Version:</strong> ${location.device_config.hw_version}</p>
+              <p><strong>SW Version:</strong> ${location.device_config.sw_version}</p>
+            ` : ''}
           </div>
         `);
 
-      markers.current[location.device_id] = marker;
+      markers.current[location.devid] = marker;
     });
 
     // Fit map to show all markers
@@ -152,11 +149,13 @@ const MapView = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'location_data'
+          table: 'sensor_data'
         },
-        () => {
-          console.log('New location data received, refreshing...');
-          fetchLocations();
+        (payload) => {
+          if (payload.new && payload.new.data_type === 'location') {
+            console.log('New location data received, refreshing...');
+            fetchLocations();
+          }
         }
       )
       .subscribe();

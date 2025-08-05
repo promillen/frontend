@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,31 +7,30 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
 import { RefreshCw, Plus } from 'lucide-react';
 
-interface Device {
-  id: string;
-  dev_id: string;
+interface DeviceConfig {
+  devid: string;
   name: string;
-  description: string;
-  hw_version: string;
-  sw_version: string;
   iccid: string;
+  heartbeat_interval: number;
+  sw_version: string;
+  hw_version: string;
+  application_mode: string;
+  device_data_updated_at: string;
+  last_seen: string;
   created_at: string;
-  updated_at: string;
 }
 
-interface LocationData {
+interface LocationSensorData {
   id: string;
-  latitude: number;
-  longitude: number;
-  temperature: number;
-  battery_level: number;
-  signal_strength: number;
-  timestamp: string;
+  devid: string;
+  data_type: string;
+  data: any; // JSONB data from Supabase
+  created_at: string;
 }
 
 const DeviceList = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [deviceLocations, setDeviceLocations] = useState<{ [key: string]: LocationData }>({});
+  const [devices, setDevices] = useState<DeviceConfig[]>([]);
+  const [deviceLocations, setDeviceLocations] = useState<{ [key: string]: LocationSensorData }>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { role } = useUserRole();
@@ -40,7 +38,7 @@ const DeviceList = () => {
   const fetchDevices = async () => {
     try {
       const { data, error } = await supabase
-        .from('devices')
+        .from('device_config')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -56,18 +54,19 @@ const DeviceList = () => {
 
       setDevices(data || []);
 
-      // Fetch latest location for each device
+      // Fetch latest location for each device from sensor_data
       if (data && data.length > 0) {
         const locationPromises = data.map(async (device) => {
           const { data: locationData } = await supabase
-            .from('location_data')
+            .from('sensor_data')
             .select('*')
-            .eq('device_id', device.id)
-            .order('timestamp', { ascending: false })
+            .eq('devid', device.devid)
+            .eq('data_type', 'location')
+            .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
           
-          return { deviceId: device.id, location: locationData };
+          return { deviceId: device.devid, location: locationData };
         });
 
         const locations = await Promise.all(locationPromises);
@@ -76,7 +75,7 @@ const DeviceList = () => {
             acc[deviceId] = location;
           }
           return acc;
-        }, {} as { [key: string]: LocationData });
+        }, {} as { [key: string]: LocationSensorData });
 
         setDeviceLocations(locationMap);
       }
@@ -97,12 +96,12 @@ const DeviceList = () => {
   }, []);
 
   const getStatusBadge = (deviceId: string) => {
-    const location = deviceLocations[deviceId];
-    if (!location) {
+    const device = devices.find(d => d.devid === deviceId);
+    if (!device?.last_seen) {
       return <Badge variant="secondary">No Data</Badge>;
     }
 
-    const lastUpdate = new Date(location.timestamp);
+    const lastUpdate = new Date(device.last_seen);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
 
@@ -143,16 +142,16 @@ const DeviceList = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {devices.map((device) => {
-          const location = deviceLocations[device.id];
+          const location = deviceLocations[device.devid];
           return (
-            <Card key={device.id}>
+            <Card key={device.devid}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{device.name || device.dev_id}</CardTitle>
-                    <CardDescription>ID: {device.dev_id}</CardDescription>
+                    <CardTitle className="text-lg">{device.name || device.devid}</CardTitle>
+                    <CardDescription>ID: {device.devid}</CardDescription>
                   </div>
-                  {getStatusBadge(device.id)}
+                  {getStatusBadge(device.devid)}
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -160,20 +159,25 @@ const DeviceList = () => {
                   <p><strong>HW Version:</strong> {device.hw_version}</p>
                   <p><strong>SW Version:</strong> {device.sw_version}</p>
                   {device.iccid && <p><strong>ICCID:</strong> {device.iccid}</p>}
+                  <p><strong>Mode:</strong> {device.application_mode}</p>
+                  {device.heartbeat_interval && (
+                    <p><strong>Heartbeat:</strong> {device.heartbeat_interval}s</p>
+                  )}
                 </div>
                 
-                {location && (
+                {location && location.data && typeof location.data === 'object' && location.data.latitude && location.data.longitude && (
                   <div className="text-sm space-y-1 pt-2 border-t">
-                    <p><strong>Location:</strong> {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}</p>
-                    {location.temperature && <p><strong>Temperature:</strong> {location.temperature}°C</p>}
-                    {location.battery_level && <p><strong>Battery:</strong> {location.battery_level}%</p>}
-                    {location.signal_strength && <p><strong>Signal:</strong> {location.signal_strength}dBm</p>}
-                    <p><strong>Last Update:</strong> {new Date(location.timestamp).toLocaleString()}</p>
+                    <p><strong>Location:</strong> {location.data.latitude.toFixed(4)}, {location.data.longitude.toFixed(4)}</p>
+                    {location.data.altitude && <p><strong>Altitude:</strong> {location.data.altitude}m</p>}
+                    {location.data.accuracy && <p><strong>Accuracy:</strong> {location.data.accuracy}m</p>}
+                    <p><strong>Last Location:</strong> {new Date(location.created_at).toLocaleString()}</p>
                   </div>
                 )}
                 
-                {device.description && (
-                  <p className="text-sm text-gray-600 pt-2 border-t">{device.description}</p>
+                {device.last_seen && (
+                  <div className="text-sm pt-2 border-t">
+                    <p><strong>Last Seen:</strong> {new Date(device.last_seen).toLocaleString()}</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
