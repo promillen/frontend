@@ -118,6 +118,7 @@ class SupabaseClient:
 async def store_uplink_to_supabase(data: Dict[str, Any]):
     """
     Store uplink data to Supabase using the new normalized schema
+    Executes device config first to satisfy foreign key dependencies
     """
     devid = data.get("devid")
     uplink_count = data.get("uplink_count")
@@ -129,45 +130,56 @@ async def store_uplink_to_supabase(data: Dict[str, Any]):
     logger.info(f"📦 Processing data for device {devid}")
     
     client = SupabaseClient()
-    results = []
+    total_operations = 0
+    success_count = 0
     
     async with aiohttp.ClientSession() as session:
-        # Handle device config (upsert)
+        # Phase 1: Execute device config first (required for foreign keys)
         if data.get("device_config"):
-            task = client.upsert_device_config(session, devid, data["device_config"])
-            results.append(("device_config", task))
+            device_config_success = await client.upsert_device_config(session, devid, data["device_config"])
+            total_operations += 1
+            if device_config_success:
+                success_count += 1
+            else:
+                logger.warning("⚠️ device_config upsert failed")
+        
+        # Phase 2: Execute dependent operations concurrently
+        dependent_tasks = []
+        task_names = []
         
         # Handle activity data
         if data.get("activity"):
             task = client.insert_activity(session, devid, uplink_count, data["activity"])
-            results.append(("activity", task))
+            dependent_tasks.append(task)
+            task_names.append("activity")
         
         # Handle reboot data
         if data.get("reboot"):
             task = client.insert_reboot(session, devid, uplink_count, data["reboot"])
-            results.append(("reboot", task))
+            dependent_tasks.append(task)
+            task_names.append("reboot")
         
         # Handle temperature sensor data
         if data.get("temperature") is not None:
             temperature_data = {"temperature": data["temperature"]}
             task = client.insert_sensor_data(session, devid, uplink_count, "temperature", temperature_data)
-            results.append(("temperature", task))
+            dependent_tasks.append(task)
+            task_names.append("temperature")
         
         # Handle WiFi sensor data
         if data.get("wifi"):
             wifi_data = {"wifi_scans": data["wifi"]}
             task = client.insert_sensor_data(session, devid, uplink_count, "location", wifi_data)
-            results.append(("wifi", task))
+            dependent_tasks.append(task)
+            task_names.append("wifi")
         
-        # Execute all tasks concurrently
-        if results:
-            tasks = [task for _, task in results]
-            task_names = [name for name, _ in results]
+        # Execute dependent tasks concurrently
+        if dependent_tasks:
+            total_operations += len(dependent_tasks)
             
             try:
-                outcomes = await asyncio.gather(*tasks, return_exceptions=True)
+                outcomes = await asyncio.gather(*dependent_tasks, return_exceptions=True)
                 
-                success_count = 0
                 for name, outcome in zip(task_names, outcomes):
                     if isinstance(outcome, Exception):
                         logger.error(f"❌ {name} task failed with exception: {outcome}")
@@ -176,11 +188,12 @@ async def store_uplink_to_supabase(data: Dict[str, Any]):
                     else:
                         logger.warning(f"⚠️ {name} task returned False")
                 
-                logger.info(f"📊 Completed {success_count}/{len(results)} operations for device {devid}")
-                
             except Exception as e:
-                logger.error(f"❌ Error executing batch operations for {devid}: {e}")
-        else:
+                logger.error(f"❌ Error executing dependent operations for {devid}: {e}")
+        
+        logger.info(f"📊 Completed {success_count}/{total_operations} operations for device {devid}")
+        
+        if total_operations == 0:
             logger.warning(f"⚠️ No data to store for device {devid}")
 
 # For backward compatibility, keep the synchronous version
