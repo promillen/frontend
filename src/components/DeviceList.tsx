@@ -4,16 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X, ChevronDown, Smartphone, MapPin, Clock, Zap } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
+import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
 import LoadingSkeleton from './LoadingSkeleton';
 import ErrorBoundary from './ErrorBoundary';
-import { useLayout } from '@/contexts/LayoutContext';
 
 interface DeviceConfig {
   devid: string;
@@ -33,17 +32,16 @@ interface LocationSensorData {
   id: string;
   devid: string;
   data_type: string;
-  data: any;
+  data: any; // JSONB data from Supabase
   created_at: string;
 }
 
 const DeviceList = () => {
   const [devices, setDevices] = useState<DeviceConfig[]>([]);
-  const [latestLocations, setLatestLocations] = useState<{ [key: string]: LocationSensorData }>({});
+  const [deviceLocations, setDeviceLocations] = useState<{ [key: string]: LocationSensorData }>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
+  const [editName, setEditName] = useState('');
   const [filters, setFilters] = useState<DeviceFilters>({
     search: '',
     status: 'all',
@@ -53,21 +51,16 @@ const DeviceList = () => {
   });
   const { toast } = useToast();
   const { role } = useUserRole();
-  const { layout } = useLayout();
 
   const fetchDevices = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      const { data: deviceData, error: deviceError } = await supabase
+      const { data, error } = await supabase
         .from('device_config')
         .select('*')
-        .order('name');
+        .order('created_at', { ascending: false });
 
-      if (deviceError) {
-        setError('Failed to fetch devices');
-        console.error('Error fetching devices:', deviceError);
+      if (error) {
+        console.error('Error fetching devices:', error);
         toast({
           title: "Error",
           description: "Failed to fetch devices",
@@ -76,30 +69,35 @@ const DeviceList = () => {
         return;
       }
 
-      setDevices(deviceData || []);
+      setDevices(data || []);
 
-      // Fetch latest location data for each device
-      const { data: locationData, error: locationError } = await supabase
-        .from('sensor_data')
-        .select('*')
-        .eq('data_type', 'location')
-        .order('created_at', { ascending: false });
+      // Fetch latest location for each device from sensor_data
+      if (data && data.length > 0) {
+        const locationPromises = data.map(async (device) => {
+          const { data: locationData } = await supabase
+            .from('sensor_data')
+            .select('*')
+            .eq('devid', device.devid)
+            .eq('data_type', 'location')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          return { deviceId: device.devid, location: locationData };
+        });
 
-      if (locationError) {
-        console.error('Error fetching locations:', locationError);
-      } else {
-        const latestByDevice = (locationData || []).reduce((acc, location) => {
-          if (!acc[location.devid] || new Date(location.created_at) > new Date(acc[location.devid].created_at)) {
-            acc[location.devid] = location;
+        const locations = await Promise.all(locationPromises);
+        const locationMap = locations.reduce((acc, { deviceId, location }) => {
+          if (location) {
+            acc[deviceId] = location;
           }
           return acc;
         }, {} as { [key: string]: LocationSensorData });
-        
-        setLatestLocations(latestByDevice);
+
+        setDeviceLocations(locationMap);
       }
-    } catch (err) {
-      setError('Failed to fetch devices');
-      console.error('Error fetching devices:', err);
+    } catch (error) {
+      console.error('Error fetching devices:', error);
       toast({
         title: "Error",
         description: "Failed to fetch devices",
@@ -182,20 +180,20 @@ const DeviceList = () => {
 
   const handleEditClick = (device: DeviceConfig) => {
     setEditingDevice(device.devid);
-    setEditingName(device.name || device.devid);
+    setEditName(device.name || device.devid);
   };
 
   const handleSaveEdit = async () => {
-    if (editingDevice && editingName.trim()) {
-      await updateDeviceName(editingDevice, editingName.trim());
+    if (editingDevice && editName.trim()) {
+      await updateDeviceName(editingDevice, editName.trim());
       setEditingDevice(null);
-      setEditingName('');
+      setEditName('');
     }
   };
 
   const handleCancelEdit = () => {
     setEditingDevice(null);
-    setEditingName('');
+    setEditName('');
   };
 
   const getBatteryColor = (level: number) => {
@@ -216,39 +214,20 @@ const DeviceList = () => {
     return 'offline';
   };
 
-  const getStatusBadge = (device: DeviceConfig) => {
+  const getStatusBadge = (deviceId: string) => {
+    const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
-      return (
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-          No Data
-        </Badge>
-      );
+      return <Badge variant="secondary">No Data</Badge>;
     }
 
     const status = getDeviceStatus(device.last_seen);
     
     if (status === 'online') {
-      return (
-        <Badge variant="default" className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
-          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-          Online
-        </Badge>
-      );
+      return <Badge variant="default" className="bg-green-500">Online</Badge>;
     } else if (status === 'warning') {
-      return (
-        <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-white flex items-center gap-1">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          Warning
-        </Badge>
-      );
+      return <Badge variant="secondary" className="bg-yellow-500">Warning</Badge>;
     } else {
-      return (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          Offline
-        </Badge>
-      );
+      return <Badge variant="destructive">Offline</Badge>;
     }
   };
 
@@ -294,11 +273,8 @@ const DeviceList = () => {
     });
   }, [devices, filters]);
 
-  // Get unique application modes for filter dropdown
   const availableModes = useMemo(() => {
-    const modes = devices
-      .map(device => device.application_mode)
-      .filter((mode): mode is string => Boolean(mode));
+    const modes = devices.map(device => device.application_mode).filter(Boolean);
     return [...new Set(modes)];
   }, [devices]);
 
@@ -306,41 +282,21 @@ const DeviceList = () => {
     return <LoadingSkeleton type="list" count={6} />;
   }
 
-  if (error) {
-    return (
-      <Card className="p-6 text-center">
-        <div className="space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
-            <X className="w-6 h-6 text-destructive" />
-          </div>
-          <div>
-            <h3 className="text-lg font-medium">Unable to load devices</h3>
-            <p className="text-muted-foreground">{error}</p>
-          </div>
-          <Button onClick={fetchDevices}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">Device Management</h1>
-            <p className="text-muted-foreground mt-1">Manage and monitor your IoT devices</p>
+            <h1 className="text-2xl font-bold">Device Management</h1>
+            <p className="text-muted-foreground">Manage and monitor your IoT devices</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button onClick={fetchDevices} variant="outline" size="sm" className="layout-transition hover:scale-105">
+          <div className="flex gap-2">
+            <Button onClick={fetchDevices} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
             {(role === 'admin' || role === 'moderator') && (
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 layout-transition hover:scale-105">
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Device
               </Button>
@@ -354,341 +310,135 @@ const DeviceList = () => {
           availableModes={availableModes}
         />
 
-        {filteredDevices.length === 0 ? (
-          <Card className="p-8 text-center shadow-lg border-0 bg-gradient-to-br from-white to-gray-50/50">
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mx-auto flex items-center justify-center shadow-sm">
-                <Smartphone className="w-8 h-8 text-blue-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium">No devices found</h3>
-                <p className="text-muted-foreground">
-                  {filters.search || filters.status !== 'all' || filters.applicationMode !== 'all' 
-                    ? 'Try adjusting your filters or search terms.' 
-                    : 'Get started by adding your first device.'}
-                </p>
-              </div>
-              {(role === 'admin' || role === 'moderator') && !filters.search && (
-                <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Device
-                </Button>
-              )}
-            </div>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredDevices.map(device => {
-              const location = latestLocations[device.devid];
-              const isEditing = editingDevice === device.devid;
-
-              if (layout === 'classic') {
-                // Original classic styling
-                return (
-                  <Card key={device.devid} className="hover:shadow-md transition-shadow duration-200">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          {isEditing ? (
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                className="h-8 text-sm font-medium"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleSaveEdit}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Check className="h-4 w-4 text-green-600" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                className="h-8 w-8 p-0"
-                              >
-                                <X className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <CardTitle className="text-sm font-semibold truncate">
-                                  {device.name || device.devid}
-                                </CardTitle>
-                                {(role === 'admin' || role === 'moderator') && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleEditClick(device)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </Button>
-                                )}
-                              </div>
-                              <CardDescription className="text-xs truncate font-mono">
-                                ID: {device.devid}
-                              </CardDescription>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-end space-y-2">
-                          {getStatusBadge(device)}
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-3">
-                      {/* Battery Level - Simple */}
-                      {device.battery_level !== null && device.battery_level !== undefined && (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium">Battery</span>
-                            <span className={`font-bold ${getBatteryColor(device.battery_level)}`}>
-                              {device.battery_level}%
-                            </span>
-                          </div>
-                          <Progress value={device.battery_level} className="h-1" />
-                        </div>
-                      )}
-
-                      {/* Location and Activity - Simple */}
-                      <div className="space-y-1 text-xs">
-                        {location && (
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Last location: {formatDanishTime(location.created_at)}
-                            </span>
-                          </div>
-                        )}
-
-                        {device.last_seen && (
-                          <div className="flex items-center space-x-1">
-                            <Clock className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-muted-foreground">
-                              Last seen: {formatDanishTime(device.last_seen)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Device Info */}
-                      <div className="grid grid-cols-2 gap-3 pt-2 border-t text-xs">
-                        <div>
-                          <span className="text-muted-foreground block">Hardware</span>
-                          <div className="font-medium truncate">{device.hw_version || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block">Software</span>
-                          <div className="font-medium truncate">{device.sw_version || 'N/A'}</div>
-                        </div>
-                      </div>
-
-                      {/* Application Mode */}
-                      {(role === 'admin' || role === 'moderator') && (
-                        <div className="flex items-center justify-between pt-2 border-t">
-                          <span className="text-xs text-muted-foreground font-medium">Mode:</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-7 px-2 text-xs font-normal"
-                              >
-                                {device.application_mode || 'Select'}
-                                <ChevronDown className="h-3 w-3 ml-1" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-32">
-                              {applicationModes.map(mode => (
-                                <DropdownMenuItem
-                                  key={mode}
-                                  onClick={() => updateDeviceMode(device.devid, mode)}
-                                  className="text-xs cursor-pointer"
-                                >
-                                  {mode}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              }
-
-              // Modern layout styling
-              return (
-                <Card 
-                  key={device.devid} 
-                  className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg bg-gradient-to-br from-white to-gray-50/50 overflow-hidden relative"
-                >
-                  {/* Status indicator line */}
-                  <div className={`absolute top-0 left-0 right-0 h-1 ${
-                    getDeviceStatus(device.last_seen) === 'online' ? 'bg-green-500' :
-                    getDeviceStatus(device.last_seen) === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-                  }`} />
-                  
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          <Smartphone className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          {isEditing ? (
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                className="h-8 text-sm font-medium border-blue-200 focus:border-blue-500"
-                                autoFocus
-                              />
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleSaveEdit}
-                                className="h-8 w-8 p-0 hover:bg-green-50 hover:border-green-200"
-                              >
-                                <Check className="h-4 w-4 text-green-600" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200"
-                              >
-                                <X className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <CardTitle className="text-sm font-semibold truncate group-hover:text-blue-600 transition-colors">
-                                  {device.name || device.devid}
-                                </CardTitle>
-                                {(role === 'admin' || role === 'moderator') && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleEditClick(device)}
-                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </Button>
-                                )}
-                              </div>
-                              <CardDescription className="text-xs truncate font-mono">
-                                ID: {device.devid}
-                              </CardDescription>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end space-y-2">
-                        {getStatusBadge(device)}
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    {/* Battery Level with Progress Bar */}
-                    {device.battery_level !== null && device.battery_level !== undefined && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center space-x-1">
-                            <Zap className="w-3 h-3 text-yellow-500" />
-                            <span className="font-medium">Battery</span>
-                          </div>
-                          <span className={`font-bold ${getBatteryColor(device.battery_level)}`}>
-                            {device.battery_level}%
-                          </span>
-                        </div>
-                        <Progress 
-                          value={device.battery_level} 
-                          className="h-2 bg-gray-100"
-                          style={{
-                            '--progress-foreground': device.battery_level >= 60 ? '#10b981' : 
-                                                   device.battery_level >= 30 ? '#f59e0b' : '#ef4444'
-                          } as React.CSSProperties}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredDevices.map((device) => {
+          const location = deviceLocations[device.devid];
+          return (
+            <Card key={device.devid}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    {editingDevice === device.devid ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="text-lg font-semibold"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit();
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                          autoFocus
                         />
+                        <Button size="sm" onClick={handleSaveEdit}>
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{device.name || device.devid}</CardTitle>
+                        {(role === 'admin' || role === 'moderator') && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => handleEditClick(device)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     )}
-
-                    {/* Location Info */}
-                    {location && (
-                      <div className="flex items-center space-x-2 text-xs bg-green-50 p-2 rounded-lg border border-green-100">
-                        <MapPin className="w-3 h-3 text-green-600" />
-                        <span className="text-green-700 font-medium">
-                          Located: {formatDanishTime(location.created_at)}
+                    <CardDescription>ID: {device.devid}</CardDescription>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    {getStatusBadge(device.devid)}
+                    {device.battery_level && (
+                      <div className="flex items-center gap-1 text-sm">
+                        <Battery 
+                          level={device.battery_level} 
+                          size="sm"
+                          className={getBatteryColor(device.battery_level)}
+                        />
+                        <span className={getBatteryColor(device.battery_level)}>
+                          {device.battery_level}%
                         </span>
                       </div>
                     )}
-
-                    {/* Last Activity */}
-                    {device.last_seen && (
-                      <div className="flex items-center space-x-2 text-xs bg-blue-50 p-2 rounded-lg border border-blue-100">
-                        <Clock className="w-3 h-3 text-blue-600" />
-                        <span className="text-blue-700 font-medium">
-                          Active: {formatDanishTime(device.last_seen)}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Device Info Grid */}
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
-                      <div className="text-xs">
-                        <span className="text-muted-foreground block">Hardware</span>
-                        <div className="font-medium truncate text-gray-900">{device.hw_version || 'N/A'}</div>
-                      </div>
-                      <div className="text-xs">
-                        <span className="text-muted-foreground block">Software</span>
-                        <div className="font-medium truncate text-gray-900">{device.sw_version || 'N/A'}</div>
-                      </div>
-                    </div>
-
-                    {/* Application Mode */}
-                    {(role === 'admin' || role === 'moderator') && (
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                        <span className="text-xs text-muted-foreground font-medium">Mode:</span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 px-2 text-xs font-normal hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm">
+                  {role === 'admin' && (
+                    <>
+                      <p><strong>HW Version:</strong> {device.hw_version}</p>
+                      <p><strong>SW Version:</strong> {device.sw_version}</p>
+                      {device.iccid && <p><strong>ICCID:</strong> {device.iccid}</p>}
+                    </>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <strong>Mode:</strong>
+                    {(role === 'admin' || role === 'moderator') ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-6 px-2 text-sm font-normal">
+                            {device.application_mode || 'Select'}
+                            <ChevronDown className="h-3 w-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="bg-background border shadow-md">
+                          {applicationModes.map((mode) => (
+                            <DropdownMenuItem
+                              key={mode}
+                              onClick={() => updateDeviceMode(device.devid, mode)}
+                              className="hover:bg-accent cursor-pointer"
                             >
-                              {device.application_mode || 'Select'}
-                              <ChevronDown className="h-3 w-3 ml-1" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-32">
-                            {applicationModes.map(mode => (
-                              <DropdownMenuItem
-                                key={mode}
-                                onClick={() => updateDeviceMode(device.devid, mode)}
-                                className="text-xs hover:bg-blue-50 cursor-pointer"
-                              >
-                                {mode}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                              {mode}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <span>{device.application_mode}</span>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  </div>
+                  {device.heartbeat_interval && (
+                    <p><strong>Heartbeat:</strong> {device.heartbeat_interval}s</p>
+                  )}
+                </div>
+                
+                {location && location.data && typeof location.data === 'object' && location.data.accuracy && (
+                  <div className="text-sm space-y-1 pt-2 border-t">
+                    {location.data.accuracy && <p><strong>Accuracy:</strong> {parseFloat(location.data.accuracy).toFixed(2)}m</p>}
+                  </div>
+                )}
+                
+                {device.last_seen && (
+                  <div className="text-sm pt-2 border-t">
+                    <p><strong>Last Seen:</strong> {formatDanishTime(device.last_seen)}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {filteredDevices.length === 0 && devices.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No devices found matching your search.</p>
+        </div>
+      )}
+
+      {devices.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No devices found. Add your first device to get started.</p>
+        </div>
+      )}
       </div>
     </ErrorBoundary>
   );
