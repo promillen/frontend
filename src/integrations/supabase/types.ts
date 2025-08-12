@@ -58,6 +58,35 @@ export type Database = {
           },
         ]
       }
+      device_access: {
+        Row: {
+          created_at: string
+          devid: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          devid: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          devid?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_config: {
         Row: {
           application_mode: string | null
