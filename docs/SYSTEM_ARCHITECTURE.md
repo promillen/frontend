@@ -9,15 +9,17 @@ This system handles IoT device data ingestion, processing, and real-time monitor
 ### Data Flow Diagram
 
 ```
-Device Data
+IoT Device Data (CoAP/UDP)
     ↓
 ┌─────────────────────────────────────┐
-│          Data Sources               │
-├─────────────────┬───────────────────┤
-│   HTTP/HTTPS    │     CoAP/UDP      │
-│       ↓         │        ↓          │
-│  Edge Function  │  Python Server    │
-└─────────────────┴───────────────────┘
+│            Fly.io Server            │
+│     (CoAP to HTTP conversion)       │
+└─────────────────────────────────────┘
+    ↓ (HTTP/HTTPS)
+┌─────────────────────────────────────┐
+│        Supabase Edge Function       │
+│      (ingest-sensor-data)           │
+└─────────────────────────────────────┘
           ↓                 ↓
     ┌─────────────────────────────────┐
     │       Supabase Database         │
@@ -103,15 +105,16 @@ X-Signature: sha256=a3d2c1b4e5f6789abc123def456789abc123def456789abc123def456789
 
 ## Step-by-Step Workflows
 
-### Workflow 1: Geolocation Data Ingestion (Edge Function)
+### Workflow 1: Sensor Data Ingestion (via Fly.io → Edge Function)
 
 #### Prerequisites
-- Device has shared secret (`FLY_INGEST_SECRET`)
-- HERE API key configured in Supabase secrets
+- Device configured to send CoAP messages to Fly.io
+- Fly.io configured with shared secret (`FLY_INGEST_SECRET`)
+- HERE API key configured in Supabase secrets (for location data)
 
 #### Step-by-Step Process
 
-1. **Device Preparation**
+1. **Device Sends CoAP Message**
    ```javascript
    const payload = {
      devid: "device_001",
@@ -135,9 +138,10 @@ X-Signature: sha256=a3d2c1b4e5f6789abc123def456789abc123def456789abc123def456789
    echo -n '{"devid":"device_001",...}' | openssl dgst -sha256 -hmac "your_secret_here"
    ```
 
-3. **Send HTTP Request**
+3. **Fly.io Forwards to Edge Function**
    ```bash
-   curl -X POST https://cdwtsrzshpotkfbyyyjk.supabase.co/functions/v1/ingest-geolocation \
+   # Fly.io automatically forwards to Supabase Edge Function
+   curl -X POST https://cdwtsrzshpotkfbyyyjk.supabase.co/functions/v1/ingest-sensor-data \
      -H "Content-Type: application/json" \
      -H "X-Signature: sha256=calculated_signature_here" \
      -d '{"devid":"device_001","wifi":[...],"cells":[...]}'
@@ -185,6 +189,46 @@ X-Signature: sha256=a3d2c1b4e5f6789abc123def456789abc123def456789abc123def456789
    - Supabase automatically notifies subscribed clients
    - Frontend receives real-time update
    - Map markers updated immediately
+
+## Updated Sequence Diagrams
+
+### Sensor Data Flow (via Fly.io)
+
+```mermaid
+sequenceDiagram
+    participant Device
+    participant Fly as Fly.io Server
+    participant EdgeFunc as Edge Function
+    participant HERE as HERE Positioning API
+    participant DB as Supabase Database
+    participant Frontend
+
+    Note over Device, Frontend: Geolocation Data Flow
+    Device->>Fly: CoAP/UDP: {wifi: [...], cells: [...], gnss: {raw satellite data}}
+    Fly->>EdgeFunc: POST /ingest-sensor-data<br/>{wifi: [...], cells: [...], gnss: {raw satellite data}}
+    EdgeFunc->>EdgeFunc: Verify HMAC signature
+    
+    alt Has WiFi/Cell data
+        EdgeFunc->>HERE: Request position with WiFi/Cell data
+        HERE-->>EdgeFunc: {lat, lng, accuracy, source: "here"}
+    else Has raw GNSS data only
+        EdgeFunc->>HERE: Process raw GNSS satellite data
+        HERE-->>EdgeFunc: {lat, lng, accuracy, source: "gnss"}
+    end
+    
+    EdgeFunc->>DB: INSERT sensor_data<br/>{data_type: "location", data: {lat, lng, accuracy, source}}
+    DB-->>Frontend: Real-time notification
+    Frontend->>Frontend: Update map markers
+
+    Note over Device, Frontend: Other Sensor Data Flow
+    Device->>Fly: CoAP/UDP: {temperature: 23.5, soil_humidity: 65.2}
+    Fly->>EdgeFunc: POST /ingest-sensor-data<br/>{temperature: 23.5, soil_humidity: 65.2}
+    EdgeFunc->>EdgeFunc: Verify HMAC signature
+    EdgeFunc->>DB: INSERT sensor_data<br/>{data_type: "temperature", data: {value: 23.5, unit: "celsius"}}
+    EdgeFunc->>DB: INSERT sensor_data<br/>{data_type: "soil_humidity", data: {value: 65.2, unit: "percent"}}
+    DB-->>Frontend: Real-time notifications
+    Frontend->>Frontend: Update sensor dashboards
+```
 
 ### Workflow 2: Other Sensor Data (Temperature, Humidity, etc.)
 
@@ -351,7 +395,7 @@ PAYLOAD='{"devid":"test_device","temperature":25.0}'
 SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$SECRET" | cut -d' ' -f2)
 
 # Test API call
-curl -X POST https://your-project.supabase.co/functions/v1/ingest-geolocation \
+curl -X POST https://your-project.supabase.co/functions/v1/ingest-sensor-data \
   -H "Content-Type: application/json" \
   -H "X-Signature: sha256=$SIGNATURE" \
   -d "$PAYLOAD"

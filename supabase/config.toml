@@ -1,4 +1,4 @@
 project_id = "cdwtsrzshpotkfbyyyjk"
 
-[functions.ingest-geolocation]
+[functions.ingest-sensor-data]
 verify_jwt = false
