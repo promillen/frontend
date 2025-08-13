@@ -6,43 +6,71 @@ This system handles IoT device data ingestion, processing, and real-time monitor
 
 ## System Architecture
 
-### Data Flow Diagram
+### System Architecture Diagram
 
+```mermaid
+flowchart TD
+    A[IoT Device] -->|CoAP/UDP| B[Fly.io Server]
+    B -->|HTTP/HTTPS + HMAC| C[Supabase Edge Function<br/>ingest-sensor-data]
+    
+    C --> D{Data Type}
+    D -->|Location Data| E[HERE Positioning API]
+    D -->|Other Sensors| F[Direct Processing]
+    
+    E --> G[Supabase Database]
+    F --> G
+    
+    G --> H[Real-time Updates<br/>WebSocket Subscriptions]
+    H --> I[Frontend Dashboard]
+    
+    G --> J[(Tables)]
+    J --> K[device_config]
+    J --> L[sensor_data]
+    J --> M[activity]
+    J --> N[reboot]
+    
+    I --> O[Device List & Filters]
+    I --> P[Interactive Map]
+    I --> Q[Real-time Monitoring]
+    I --> R[User Management]
 ```
-IoT Device Data (CoAP/UDP)
-    ↓
-┌─────────────────────────────────────┐
-│            Fly.io Server            │
-│     (CoAP to HTTP conversion)       │
-└─────────────────────────────────────┘
-    ↓ (HTTP/HTTPS)
-┌─────────────────────────────────────┐
-│        Supabase Edge Function       │
-│      (ingest-sensor-data)           │
-└─────────────────────────────────────┘
-          ↓                 ↓
-    ┌─────────────────────────────────┐
-    │       Supabase Database         │
-    │  ┌─────────────────────────────┐│
-    │  │ • device_config             ││
-    │  │ • sensor_data               ││
-    │  │ • activity                  ││
-    │  │ • reboot                    ││
-    │  └─────────────────────────────┘│
-    └─────────────────────────────────┘
-                   ↓
-    ┌─────────────────────────────────┐
-    │      Real-time Updates          │
-    │    (WebSocket Subscriptions)    │
-    └─────────────────────────────────┘
-                   ↓
-    ┌─────────────────────────────────┐
-    │       Frontend Dashboard        │
-    │  • Device List & Filters        │
-    │  • Interactive Map              │
-    │  • Real-time Monitoring         │
-    │  • User Management              │
-    └─────────────────────────────────┘
+
+### Data Flow Sequence
+
+```mermaid
+sequenceDiagram
+    participant Device as IoT Device
+    participant Fly as Fly.io Server
+    participant Edge as Edge Function
+    participant HERE as HERE API
+    participant DB as Supabase DB
+    participant UI as Frontend
+
+    Note over Device, UI: Location Data Flow
+    Device->>Fly: CoAP/UDP: location payload
+    Fly->>Edge: POST /ingest-sensor-data<br/>+ HMAC signature
+    Edge->>Edge: Verify HMAC
+    
+    alt WiFi/Cell Data Available
+        Edge->>HERE: Position request
+        HERE-->>Edge: Coordinates + accuracy
+    else GNSS Data Only
+        Edge->>HERE: Process raw GNSS
+        HERE-->>Edge: Calculated position
+    end
+    
+    Edge->>DB: INSERT sensor_data<br/>type: location
+    DB-->>UI: Real-time update
+    UI->>UI: Update map markers
+
+    Note over Device, UI: Other Sensor Data Flow  
+    Device->>Fly: CoAP/UDP: sensor payload<br/>(temperature, humidity, etc.)
+    Fly->>Edge: POST /ingest-sensor-data<br/>+ HMAC signature
+    Edge->>Edge: Verify HMAC
+    Edge->>DB: INSERT sensor_data<br/>type: temperature
+    Edge->>DB: INSERT sensor_data<br/>type: humidity
+    DB-->>UI: Real-time updates
+    UI->>UI: Update dashboards
 ```
 
 ## Security Architecture
