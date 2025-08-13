@@ -64,11 +64,10 @@ sequenceDiagram
     UI->>UI: Update map markers
 
     Note over Device, UI: Other Sensor Data Flow  
-    Device->>Fly: CoAP/UDP: sensor payload<br/>(temperature, humidity, etc.)
+    Device->>Fly: CoAP/UDP: soil sensor payload<br/>(temp, humidity, NPK, pH, etc.)
     Fly->>Edge: POST /ingest-sensor-data<br/>+ HMAC signature
     Edge->>Edge: Verify HMAC
-    Edge->>DB: INSERT sensor_data<br/>type: temperature
-    Edge->>DB: INSERT sensor_data<br/>type: humidity
+    Edge->>DB: INSERT sensor_data<br/>type: soil_data<br/>data: {temp, humidity, npk, ph}
     DB-->>UI: Real-time updates
     UI->>UI: Update dashboards
 ```
