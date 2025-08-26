@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, MapPin, List, Users, Layout, LayoutGrid } from 'lucide-react';
-import { useLayout } from '@/contexts/LayoutContext';
+import { LogOut, MapPin, List, Users } from 'lucide-react';
 
 interface NavbarProps {
   activeView: 'map' | 'devices' | 'users';
@@ -14,7 +13,6 @@ interface NavbarProps {
 const Navbar = ({ activeView, onViewChange }: NavbarProps) => {
   const { user, signOut } = useAuth();
   const { role } = useUserRole();
-  const { layout, toggleLayout } = useLayout();
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -53,29 +51,6 @@ const Navbar = ({ activeView, onViewChange }: NavbarProps) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Layout Toggle with clear labels */}
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-500">Layout:</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={toggleLayout}
-                className="gap-2"
-              >
-                {layout === 'classic' ? (
-                  <>
-                    <LayoutGrid className="h-4 w-4" />
-                    <span className="hidden sm:inline">Modern</span>
-                  </>
-                ) : (
-                  <>
-                    <Layout className="h-4 w-4" />
-                    <span className="hidden sm:inline">Classic</span>
-                  </>
-                )}
-              </Button>
-            </div>
-            
             {role && (
               <Badge variant="outline" className="capitalize">
                 {role}

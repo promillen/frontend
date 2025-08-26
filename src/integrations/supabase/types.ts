@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -55,35 +55,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "device_config"
             referencedColumns: ["devid"]
-          },
-        ]
-      }
-      device_access: {
-        Row: {
-          created_at: string
-          devid: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          devid: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          devid?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "device_access_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -257,8 +228,8 @@ export type Database = {
     Functions: {
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
       }
