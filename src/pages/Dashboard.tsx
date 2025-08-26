@@ -34,11 +34,15 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar activeView={activeView} onViewChange={setActiveView} />
       
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 flex flex-col">
         {activeView === 'map' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h1 className="text-2xl font-bold mb-4">Device Locations</h1>
-            <MapView />
+          <div className="flex-1 flex flex-col">
+            <div className="px-4 py-4 bg-white border-b">
+              <h1 className="text-2xl font-bold">Device Locations</h1>
+            </div>
+            <div className="flex-1">
+              <MapView />
+            </div>
           </div>
         )}
         
@@ -86,10 +90,10 @@ const Dashboard = () => {
               </div>
             </header>
             
-            <main className="flex-1 p-6 bg-gradient-to-br from-background to-muted/20">
+            <main className="flex-1 flex flex-col bg-gradient-to-br from-background to-muted/20">
               {activeView === 'map' && (
-                <div className="h-full space-y-6">
-                  <div className="layout-transition">
+                <div className="flex-1 flex flex-col">
+                  <div className="p-6 layout-transition">
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                       Device Locations
                     </h1>
@@ -97,7 +101,7 @@ const Dashboard = () => {
                       View real-time device locations on the interactive map
                     </p>
                   </div>
-                  <div className="bg-card rounded-xl border shadow-lg overflow-hidden layout-transition hover:shadow-xl" style={{ height: '600px' }}>
+                  <div className="flex-1 bg-card border-t shadow-lg overflow-hidden layout-transition">
                     <MapView />
                   </div>
                 </div>
