@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,6 @@ import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown } from 'lucide-re
 import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
-import LoadingSkeleton from './LoadingSkeleton';
-import ErrorBoundary from './ErrorBoundary';
 
 interface DeviceConfig {
   devid: string;
@@ -42,13 +39,7 @@ const DeviceList = () => {
   const [loading, setLoading] = useState(true);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [filters, setFilters] = useState<DeviceFilters>({
-    search: '',
-    status: 'all',
-    applicationMode: 'all',
-    batteryRange: [0, 100],
-    dateRange: {},
-  });
+  const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
   const { role } = useUserRole();
 
@@ -202,29 +193,19 @@ const DeviceList = () => {
     return 'text-red-500';
   };
 
-  const getDeviceStatus = (lastSeen: string | null): 'online' | 'warning' | 'offline' => {
-    if (!lastSeen) return 'offline';
-    
-    const lastUpdate = new Date(lastSeen);
-    const now = new Date();
-    const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
-
-    if (diffMinutes < 30) return 'online';
-    if (diffMinutes < 120) return 'warning';
-    return 'offline';
-  };
-
   const getStatusBadge = (deviceId: string) => {
     const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
       return <Badge variant="secondary">No Data</Badge>;
     }
 
-    const status = getDeviceStatus(device.last_seen);
-    
-    if (status === 'online') {
+    const lastUpdate = new Date(device.last_seen);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+
+    if (diffMinutes < 30) {
       return <Badge variant="default" className="bg-green-500">Online</Badge>;
-    } else if (status === 'warning') {
+    } else if (diffMinutes < 120) {
       return <Badge variant="secondary" className="bg-yellow-500">Warning</Badge>;
     } else {
       return <Badge variant="destructive">Offline</Badge>;
@@ -237,78 +218,46 @@ const DeviceList = () => {
 
   const applicationModes = ['tracking', 'monitoring', 'maintenance', 'standby'];
 
-  // Apply filters to devices
-  const filteredDevices = useMemo(() => {
-    return devices.filter(device => {
-      // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        const matchesSearch = 
-          device.name?.toLowerCase().includes(searchLower) ||
-          device.devid.toLowerCase().includes(searchLower) ||
-          device.iccid?.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
-
-      // Status filter
-      if (filters.status !== 'all') {
-        const status = getDeviceStatus(device.last_seen);
-        if (status !== filters.status) return false;
-      }
-
-      // Application mode filter
-      if (filters.applicationMode !== 'all') {
-        if (device.application_mode !== filters.applicationMode) return false;
-      }
-
-      // Battery range filter
-      if (device.battery_level !== null && device.battery_level !== undefined) {
-        const battery = device.battery_level;
-        if (battery < filters.batteryRange[0] || battery > filters.batteryRange[1]) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [devices, filters]);
-
-  const availableModes = useMemo(() => {
-    const modes = devices.map(device => device.application_mode).filter(Boolean);
-    return [...new Set(modes)];
-  }, [devices]);
+  const filteredDevices = devices.filter(device => 
+    device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    device.devid.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
-    return <LoadingSkeleton type="list" count={6} />;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <ErrorBoundary>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Device Management</h1>
-            <p className="text-muted-foreground">Manage and monitor your IoT devices</p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={fetchDevices} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Devices</h2>
+        <div className="flex gap-2">
+          <Button onClick={fetchDevices} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          {(role === 'admin' || role === 'moderator') && (
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Device
             </Button>
-            {(role === 'admin' || role === 'moderator') && (
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Device
-              </Button>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        <DeviceFiltersComponent
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableModes={availableModes}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search devices..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
         />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDevices.map((device) => {
@@ -439,8 +388,7 @@ const DeviceList = () => {
           <p className="text-gray-500">No devices found. Add your first device to get started.</p>
         </div>
       )}
-      </div>
-    </ErrorBoundary>
+    </div>
   );
 };
 

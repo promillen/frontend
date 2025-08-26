@@ -2,12 +2,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/AppSidebar';
+import Navbar from '@/components/Navbar';
 import MapView from '@/components/MapView';
 import DeviceList from '@/components/DeviceList';
 import UserManagement from '@/components/UserManagement';
-import ErrorBoundary from '@/components/ErrorBoundary';
 
 const Dashboard = () => {
   const { loading: authLoading } = useAuth();
@@ -26,37 +24,22 @@ const Dashboard = () => {
   }
 
   return (
-    <ErrorBoundary>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AppSidebar activeView={activeView} onViewChange={setActiveView} />
-          
-          <div className="flex-1 flex flex-col">
-            <header className="h-12 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <SidebarTrigger className="ml-2" />
-            </header>
-            
-            <main className="flex-1 p-6">
-              {activeView === 'map' && (
-                <div className="h-full">
-                  <div className="mb-4">
-                    <h1 className="text-2xl font-bold">Device Locations</h1>
-                    <p className="text-muted-foreground">View real-time device locations on the map</p>
-                  </div>
-                  <div className="bg-card rounded-lg border p-6 h-[600px]">
-                    <MapView />
-                  </div>
-                </div>
-              )}
-              
-              {activeView === 'devices' && <DeviceList />}
-              
-              {activeView === 'users' && <UserManagement />}
-            </main>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar activeView={activeView} onViewChange={setActiveView} />
+      
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {activeView === 'map' && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h1 className="text-2xl font-bold mb-4">Device Locations</h1>
+            <MapView />
           </div>
-        </div>
-      </SidebarProvider>
-    </ErrorBoundary>
+        )}
+        
+        {activeView === 'devices' && <DeviceList />}
+        
+        {activeView === 'users' && <UserManagement />}
+      </main>
+    </div>
   );
 };
 
