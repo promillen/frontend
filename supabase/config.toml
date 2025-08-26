@@ -1,1 +1,4 @@
 project_id = "cdwtsrzshpotkfbyyyjk"
+
+[functions.ingest-sensor-data]
+verify_jwt = false

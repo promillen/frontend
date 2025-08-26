@@ -3,6 +3,8 @@ import aiohttp
 import asyncio
 import logging
 import json
+import hmac
+import hashlib
 from typing import Dict, Any, Optional
 
 # Use environment variables for Supabase credentials
@@ -13,6 +15,43 @@ if not SUPABASE_URL or not SUPABASE_API_KEY:
     raise ValueError("SUPABASE_URL and SUPABASE_API_KEY environment variables must be set")
 
 logger = logging.getLogger(__name__)
+
+async def send_location_via_edge(session: aiohttp.ClientSession, devid: str, uplink_count: Optional[int], wifi: Optional[list] = None, cells: Optional[list] = None, gnss: Optional[Dict[str, Any]] = None) -> bool:
+    """Call the Supabase Edge Function to resolve location (HERE) and store it."""
+    try:
+        function_url = "https://cdwtsrzshpotkfbyyyjk.functions.supabase.co/ingest-sensor-data"
+        secret = os.getenv("FLY_INGEST_SECRET")
+        if not secret:
+            logger.error("❌ FLY_INGEST_SECRET environment variable is not set")
+            return False
+
+        payload: Dict[str, Any] = {"devid": devid, "uplink_count": uplink_count}
+        if wifi:
+            payload["wifi"] = wifi
+        if cells:
+            payload["cells"] = cells
+        if gnss:
+            payload["gnss"] = gnss
+
+        body = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode()
+        sig = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+        headers = {
+            "Content-Type": "application/json",
+            "x-signature": f"sha256={sig}",
+        }
+
+        async with session.post(function_url, data=body, headers=headers) as resp:
+            text = await resp.text()
+            if resp.status == 200:
+                logger.info(f"✅ Location ingested via Edge for {devid}")
+                return True
+            else:
+                logger.error(f"❌ Edge ingest failed for {devid}: {resp.status} - {text}")
+                return False
+    except Exception as e:
+        logger.error(f"❌ Edge ingest exception for {devid}: {e}")
+        return False
+
 
 class SupabaseClient:
     def __init__(self):
@@ -169,12 +208,11 @@ async def store_uplink_to_supabase(data: Dict[str, Any]):
             dependent_tasks.append(task)
             task_names.append("temperature")
         
-        # Handle WiFi sensor data
+# Handle WiFi/location payload via Edge Function (HERE + DB insert)
         if data.get("wifi"):
-            wifi_data = {"wifi_scans": data["wifi"]}
-            task = client.insert_sensor_data(session, devid, uplink_count, "location", wifi_data)
+            task = send_location_via_edge(session, devid, uplink_count, wifi=data["wifi"]) 
             dependent_tasks.append(task)
-            task_names.append("wifi")
+            task_names.append("location_ingest")
         
         # Execute dependent tasks concurrently
         if dependent_tasks:
