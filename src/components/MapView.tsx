@@ -173,7 +173,7 @@ const MapView = () => {
 
   return (
     <div className="w-full h-full">
-      <div ref={mapRef} className="w-full h-full min-h-[500px]" />
+      <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg" />
     </div>
   );
 };
