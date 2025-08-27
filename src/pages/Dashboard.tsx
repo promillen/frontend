@@ -35,7 +35,7 @@ const Dashboard = () => {
       <Navbar activeView={activeView} onViewChange={setActiveView} />
       
       {activeView === 'map' ? (
-        <main className="flex-1 h-[calc(100vh-4rem)]">
+        <main className="flex-1" style={{ height: 'calc(100vh - 4rem)' }}>
           <MapView />
         </main>
       ) : (
