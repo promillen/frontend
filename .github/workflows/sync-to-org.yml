@@ -22,7 +22,7 @@ jobs:
 
     - name: Add organization remote and push
       run: |
-        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git
+        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ORGANIZATION_NAME/REPO_NAME.git
         
         # Try to fetch, but don't fail if repo is empty
         echo "📡 Fetching from organization repository..."
@@ -48,7 +48,24 @@ jobs:
         
         # Push to organization repo (this will create the main branch if it doesn't exist)
         echo "🚀 Pushing to organization repository..."
-        git push org main:main
+        
+        # Create a temporary branch without conflicting workflow files
+        git checkout -b temp-sync-branch
+        
+        # Remove the sync-to-org workflow from the temp branch (we don't want it in the org repo)
+        git rm .github/workflows/sync-to-org.yml 2>/dev/null || true
+        
+        # If there's a sync-from-personal.yml in this repo, remove it too
+        git rm .github/workflows/sync-from-personal.yml 2>/dev/null || true
+        
+        git commit -m "Remove conflicting sync workflows for org push" --allow-empty
+        
+        # Push the clean branch to org repo
+        git push org temp-sync-branch:main
+        
+        # Clean up temp branch
+        git checkout main
+        git branch -D temp-sync-branch
 
     - name: Check sync status
       run: |
