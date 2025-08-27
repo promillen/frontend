@@ -63,7 +63,11 @@ const Dashboard = () => {
               <div className="flex items-center space-x-4">
                 <SidebarTrigger className="layout-transition hover:scale-110 active:scale-95" />
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium">IoT Tracker Hub</span>
+                  <span className="text-sm font-medium">
+                    {activeView === 'map' && 'Device Locations'}
+                    {activeView === 'devices' && 'Devices'}
+                    {activeView === 'users' && 'User Management'}
+                  </span>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-xs text-muted-foreground">Modern Layout</span>
