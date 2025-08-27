@@ -34,14 +34,12 @@ jobs:
           
           # Check for conflicts since both repos have content
           if ! git merge-base --is-ancestor org/main HEAD && ! git merge-base --is-ancestor HEAD org/main; then
-            echo "⚠️  Warning: Potential merge conflicts detected"
-            echo "Both repositories have diverged. Manual intervention may be required."
+            echo "⚠️  Divergence detected; continuing with force push (expected due to workflow file differences)"
             echo "Organization repo latest commit: $(git log --oneline -1 org/main)"
             echo "Personal repo latest commit: $(git log --oneline -1 HEAD)"
-            exit 1
+          else
+            echo "✅ No conflicts detected"
           fi
-          
-          echo "✅ No conflicts detected"
         else
           echo "ℹ️  Organization repository is empty - performing initial sync"
         fi
@@ -58,7 +56,7 @@ jobs:
         # If there's a sync-to-personal.yml in this repo, remove it too
         git rm .github/workflows/sync-to-personal.yml 2>/dev/null || true
         
-        git commit -m "Remove conflicting sync workflows for org push" --allow-empty
+        git commit -m "[skip ci] Remove conflicting sync workflows for org push" --allow-empty
         
         # Push the clean branch to org repo (force push to resolve conflicts)
         git push --force org temp-sync-branch:main
