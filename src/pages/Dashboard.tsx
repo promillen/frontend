@@ -35,8 +35,10 @@ const Dashboard = () => {
       <Navbar activeView={activeView} onViewChange={setActiveView} />
       
       {activeView === 'map' ? (
-        <div className="flex-1 relative">
-          <MapView />
+        <div className="flex-1 relative min-h-0">
+          <div className="absolute inset-0">
+            <MapView />
+          </div>
         </div>
       ) : (
         <main className="flex-1 max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 w-full">
