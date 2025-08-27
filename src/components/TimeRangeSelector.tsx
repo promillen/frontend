@@ -1,0 +1,60 @@
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Clock, Calendar } from 'lucide-react';
+
+export interface TimeRange {
+  id: string;
+  label: string;
+  hours: number;
+}
+
+export const TIME_RANGES: TimeRange[] = [
+  { id: 'none', label: 'Current Position', hours: 0 },
+  { id: '1h', label: 'Last Hour', hours: 1 },
+  { id: '6h', label: 'Last 6 Hours', hours: 6 },
+  { id: '1d', label: 'Last Day', hours: 24 },
+  { id: '7d', label: 'Last 7 Days', hours: 168 },
+  { id: '30d', label: 'Last 30 Days', hours: 720 }
+];
+
+interface TimeRangeSelectorProps {
+  activeRange: string;
+  onRangeChange: (rangeId: string) => void;
+}
+
+const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
+  activeRange,
+  onRangeChange
+}) => {
+  return (
+    <Card className="absolute bottom-4 left-4 z-[1000] bg-card/95 backdrop-blur-sm">
+      <CardContent className="p-2">
+        <div className="flex items-center gap-1 mb-2">
+          <Clock className="h-3 w-3" />
+          <span className="text-xs font-medium">Movement Tracking</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          {TIME_RANGES.map((range) => (
+            <Button
+              key={range.id}
+              variant={activeRange === range.id ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onRangeChange(range.id)}
+              className="justify-start text-xs h-8"
+            >
+              {range.id === 'none' ? (
+                <Calendar className="h-3 w-3 mr-2" />
+              ) : (
+                <Clock className="h-3 w-3 mr-2" />
+              )}
+              {range.label}
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default TimeRangeSelector;

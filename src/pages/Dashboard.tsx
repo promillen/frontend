@@ -29,25 +29,21 @@ const Dashboard = () => {
     );
   }
 
-  // Classic Layout (Original working layout)
+  // Classic Layout (Fullscreen map)
   const ClassicLayout = () => (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar activeView={activeView} onViewChange={setActiveView} />
       
-      <main className="flex-1 max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 w-full">
-        {activeView === 'map' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 h-full flex flex-col">
-            <h1 className="text-2xl font-bold mb-4">Device Locations</h1>
-            <div className="flex-1">
-              <MapView />
-            </div>
-          </div>
-        )}
-        
-        {activeView === 'devices' && <DeviceList />}
-        
-        {activeView === 'users' && <UserManagement />}
-      </main>
+      {activeView === 'map' ? (
+        <main className="flex-1 h-[calc(100vh-4rem)]">
+          <MapView />
+        </main>
+      ) : (
+        <main className="flex-1 max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 w-full">
+          {activeView === 'devices' && <DeviceList />}
+          {activeView === 'users' && <UserManagement />}
+        </main>
+      )}
     </div>
   );
 

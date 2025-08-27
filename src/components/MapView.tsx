@@ -3,6 +3,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import MapTileSelector, { TILE_LAYERS } from './MapTileSelector';
+import DeviceFilter from './DeviceFilter';
+import TimeRangeSelector, { TIME_RANGES } from './TimeRangeSelector';
+import DeviceLogViewer from './DeviceLogViewer';
+import { Button } from './ui/button';
+import { Activity } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 // Fix for default markers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -30,8 +37,20 @@ const MapView = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef<{ [key: string]: L.Marker }>({});
+  const trails = useRef<{ [key: string]: L.Polyline }>({});
+  const currentTileLayer = useRef<L.TileLayer | null>(null);
+  
   const [locations, setLocations] = useState<LocationSensorData[]>([]);
+  const [activeTileLayer, setActiveTileLayer] = useState('cartodb_voyager');
+  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  const [allDevices, setAllDevices] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeTimeRange, setActiveTimeRange] = useState('none');
+  const [selectedDeviceForLogs, setSelectedDeviceForLogs] = useState<string | null>(null);
+  const [isLogViewerOpen, setIsLogViewerOpen] = useState(false);
+  
   const { toast } = useToast();
+  const { role: userRole } = useUserRole();
 
   useEffect(() => {
     if (!mapRef.current || map.current) return;
@@ -39,9 +58,13 @@ const MapView = () => {
     // Initialize map
     map.current = L.map(mapRef.current).setView([55.6761, 12.5683], 10); // Default to Copenhagen
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map.current);
+    // Add initial tile layer
+    const initialLayer = TILE_LAYERS.find(layer => layer.id === activeTileLayer);
+    if (initialLayer) {
+      currentTileLayer.current = L.tileLayer(initialLayer.url, {
+        attribution: initialLayer.attribution
+      }).addTo(map.current);
+    }
 
     return () => {
       if (map.current) {
@@ -51,9 +74,28 @@ const MapView = () => {
     };
   }, []);
 
-  const fetchLocations = async () => {
+  const changeTileLayer = (layerId: string) => {
+    if (!map.current) return;
+
+    const layer = TILE_LAYERS.find(l => l.id === layerId);
+    if (!layer) return;
+
+    // Remove current tile layer
+    if (currentTileLayer.current) {
+      map.current.removeLayer(currentTileLayer.current);
+    }
+
+    // Add new tile layer
+    currentTileLayer.current = L.tileLayer(layer.url, {
+      attribution: layer.attribution
+    }).addTo(map.current);
+
+    setActiveTileLayer(layerId);
+  };
+
+  const fetchLocations = async (timeRangeHours = 0) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sensor_data')
         .select(`
           *,
@@ -67,6 +109,14 @@ const MapView = () => {
         .eq('data_type', 'location')
         .order('created_at', { ascending: false });
 
+      // Apply time range filter
+      if (timeRangeHours > 0) {
+        const cutoffTime = new Date(Date.now() - timeRangeHours * 60 * 60 * 1000).toISOString();
+        query = query.gte('created_at', cutoffTime);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error('Error fetching locations:', error);
         toast({
@@ -78,7 +128,17 @@ const MapView = () => {
       }
 
       setLocations(data || []);
-      updateMapMarkers(data || []);
+      
+      // Extract all unique device IDs
+      const deviceIds = [...new Set((data || []).map(location => location.devid))];
+      setAllDevices(deviceIds);
+      
+      // Initialize selected devices if empty
+      if (selectedDevices.length === 0) {
+        setSelectedDevices(deviceIds);
+      }
+      
+      updateMapMarkers(data || [], timeRangeHours);
     } catch (error) {
       console.error('Error fetching locations:', error);
       toast({
@@ -89,63 +149,172 @@ const MapView = () => {
     }
   };
 
-  const updateMapMarkers = (locationData: LocationSensorData[]) => {
+  const updateMapMarkers = (locationData: LocationSensorData[], timeRangeHours = 0) => {
     if (!map.current) return;
 
-    // Clear existing markers
+    // Clear existing markers and trails
     Object.values(markers.current).forEach(marker => {
       map.current?.removeLayer(marker);
     });
-    markers.current = {};
-
-    // Group locations by device and get latest location for each
-    const latestLocations = locationData.reduce((acc, location) => {
-      const deviceId = location.devid;
-      if (!acc[deviceId] || new Date(location.created_at) > new Date(acc[deviceId].created_at)) {
-        acc[deviceId] = location;
-      }
-      return acc;
-    }, {} as { [key: string]: LocationSensorData });
-
-    // Add markers for latest locations
-    Object.values(latestLocations).forEach(location => {
-      if (!location.data || typeof location.data !== 'object') return;
-      
-      // Handle both lat/lng and latitude/longitude formats
-      const lat = location.data.lat || location.data.latitude;
-      const lng = location.data.lng || location.data.longitude;
-      
-      if (!lat || !lng) return;
-
-      const marker = L.marker([lat, lng])
-        .addTo(map.current!)
-        .bindPopup(`
-          <div>
-            <h3><strong>${location.device_config?.name || location.devid}</strong></h3>
-            <p><strong>Device ID:</strong> ${location.devid}</p>
-            <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
-            ${location.data.altitude ? `<p><strong>Altitude:</strong> ${location.data.altitude}m</p>` : ''}
-            ${location.data.accuracy ? `<p><strong>Accuracy:</strong> ${location.data.accuracy}m</p>` : ''}
-            <p><strong>Last Update:</strong> ${new Date(location.created_at).toLocaleString()}</p>
-            ${location.device_config ? `
-              <p><strong>HW Version:</strong> ${location.device_config.hw_version}</p>
-              <p><strong>SW Version:</strong> ${location.device_config.sw_version}</p>
-            ` : ''}
-          </div>
-        `);
-
-      markers.current[location.devid] = marker;
+    Object.values(trails.current).forEach(trail => {
+      map.current?.removeLayer(trail);
     });
+    markers.current = {};
+    trails.current = {};
+
+    // Filter by selected devices
+    const filteredData = locationData.filter(location => 
+      selectedDevices.includes(location.devid)
+    );
+
+    if (timeRangeHours === 0) {
+      // Show current positions only
+      const latestLocations = filteredData.reduce((acc, location) => {
+        const deviceId = location.devid;
+        if (!acc[deviceId] || new Date(location.created_at) > new Date(acc[deviceId].created_at)) {
+          acc[deviceId] = location;
+        }
+        return acc;
+      }, {} as { [key: string]: LocationSensorData });
+
+      // Add markers for latest locations
+      Object.values(latestLocations).forEach(location => {
+        addMarker(location);
+      });
+    } else {
+      // Show movement trails
+      const deviceGroups = filteredData.reduce((acc, location) => {
+        if (!acc[location.devid]) {
+          acc[location.devid] = [];
+        }
+        acc[location.devid].push(location);
+        return acc;
+      }, {} as { [key: string]: LocationSensorData[] });
+
+      Object.entries(deviceGroups).forEach(([deviceId, deviceLocations]) => {
+        // Sort by timestamp
+        deviceLocations.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        
+        // Create trail
+        const points: L.LatLng[] = [];
+        deviceLocations.forEach(location => {
+          if (!location.data || typeof location.data !== 'object') return;
+          
+          const lat = location.data.lat || location.data.latitude;
+          const lng = location.data.lng || location.data.longitude;
+          
+          if (lat && lng) {
+            points.push(new L.LatLng(lat, lng));
+          }
+        });
+
+        if (points.length > 1) {
+          // Create trail polyline
+          const trail = L.polyline(points, {
+            color: getDeviceColor(deviceId),
+            weight: 3,
+            opacity: 0.7
+          }).addTo(map.current!);
+          
+          trails.current[deviceId] = trail;
+        }
+
+        // Add marker for latest position
+        if (deviceLocations.length > 0) {
+          addMarker(deviceLocations[deviceLocations.length - 1], true);
+        }
+      });
+    }
 
     // Fit map to show all markers
-    if (Object.keys(markers.current).length > 0) {
-      const group = new L.FeatureGroup(Object.values(markers.current));
+    const allMarkers = Object.values(markers.current);
+    if (allMarkers.length > 0) {
+      const group = new L.FeatureGroup(allMarkers);
       map.current.fitBounds(group.getBounds(), { padding: [20, 20] });
     }
   };
 
+  const addMarker = (location: LocationSensorData, isTrailEnd = false) => {
+    if (!location.data || typeof location.data !== 'object') return;
+    
+    const lat = location.data.lat || location.data.latitude;
+    const lng = location.data.lng || location.data.longitude;
+    
+    if (!lat || !lng) return;
+
+    const marker = L.marker([lat, lng])
+      .addTo(map.current!)
+      .bindPopup(`
+        <div>
+          <h3><strong>${location.device_config?.name || location.devid}</strong></h3>
+          <p><strong>Device ID:</strong> ${location.devid}</p>
+          <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+          ${location.data.altitude ? `<p><strong>Altitude:</strong> ${location.data.altitude}m</p>` : ''}
+          ${location.data.accuracy ? `<p><strong>Accuracy:</strong> ${location.data.accuracy}m</p>` : ''}
+          <p><strong>Last Update:</strong> ${new Date(location.created_at).toLocaleString()}</p>
+          ${location.device_config ? `
+            <p><strong>HW Version:</strong> ${location.device_config.hw_version}</p>
+            <p><strong>SW Version:</strong> ${location.device_config.sw_version}</p>
+          ` : ''}
+          ${userRole === 'admin' ? `
+            <div class="mt-2">
+              <button onclick="window.showDeviceLogs('${location.devid}')" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">
+                View Live Logs
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `);
+
+    markers.current[location.devid] = marker;
+  };
+
+  const getDeviceColor = (deviceId: string) => {
+    // Generate consistent color for each device
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    const index = Array.from(deviceId).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
+
+  const handleDeviceToggle = (deviceId: string) => {
+    setSelectedDevices(prev => {
+      const updated = prev.includes(deviceId)
+        ? prev.filter(id => id !== deviceId)
+        : [...prev, deviceId];
+      return updated;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedDevices([...allDevices]);
+  };
+
+  const handleSelectNone = () => {
+    setSelectedDevices([]);
+  };
+
+  const handleTimeRangeChange = (rangeId: string) => {
+    setActiveTimeRange(rangeId);
+    const range = TIME_RANGES.find(r => r.id === rangeId);
+    if (range) {
+      fetchLocations(range.hours);
+    }
+  };
+
+  // Global function to show device logs from popup
   useEffect(() => {
-    fetchLocations();
+    (window as any).showDeviceLogs = (deviceId: string) => {
+      setSelectedDeviceForLogs(deviceId);
+      setIsLogViewerOpen(true);
+    };
+
+    return () => {
+      delete (window as any).showDeviceLogs;
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchLocations(TIME_RANGES.find(r => r.id === activeTimeRange)?.hours || 0);
 
     // Set up real-time subscription for location updates
     const channel = supabase
@@ -160,7 +329,7 @@ const MapView = () => {
         (payload) => {
           if (payload.new && payload.new.data_type === 'location') {
             console.log('New location data received, refreshing...');
-            fetchLocations();
+            fetchLocations(TIME_RANGES.find(r => r.id === activeTimeRange)?.hours || 0);
           }
         }
       )
@@ -171,9 +340,47 @@ const MapView = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (locations.length > 0) {
+      updateMapMarkers(locations, TIME_RANGES.find(r => r.id === activeTimeRange)?.hours || 0);
+    }
+  }, [selectedDevices]);
+
   return (
-    <div className="w-full h-full">
-      <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg" />
+    <div className="relative w-full h-full">
+      <div ref={mapRef} className="w-full h-full" />
+      
+      {/* Map Controls */}
+      <MapTileSelector 
+        activeLayer={activeTileLayer}
+        onLayerChange={changeTileLayer}
+      />
+      
+      <DeviceFilter
+        selectedDevices={selectedDevices}
+        onDeviceToggle={handleDeviceToggle}
+        onSelectAll={handleSelectAll}
+        onSelectNone={handleSelectNone}
+        isOpen={isFilterOpen}
+        onToggle={() => setIsFilterOpen(!isFilterOpen)}
+      />
+      
+      <TimeRangeSelector
+        activeRange={activeTimeRange}
+        onRangeChange={handleTimeRangeChange}
+      />
+
+      {/* Admin Live Logs */}
+      {userRole === 'admin' && (
+        <DeviceLogViewer
+          deviceId={selectedDeviceForLogs}
+          isOpen={isLogViewerOpen}
+          onClose={() => {
+            setIsLogViewerOpen(false);
+            setSelectedDeviceForLogs(null);
+          }}
+        />
+      )}
     </div>
   );
 };
