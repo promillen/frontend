@@ -66,18 +66,31 @@ const MapView = () => {
       }).addTo(map.current);
     }
 
-    // Fix for classic mode - invalidate size after container is ready
-    setTimeout(() => {
+    // Fix for map sizing issues - invalidate size after container is ready
+    const handleResize = () => {
       if (map.current) {
         map.current.invalidateSize();
       }
-    }, 100);
+    };
+
+    // Initial resize
+    setTimeout(handleResize, 100);
+
+    // Add resize observer to handle container size changes
+    const resizeObserver = new ResizeObserver(() => {
+      setTimeout(handleResize, 50);
+    });
+
+    if (mapRef.current) {
+      resizeObserver.observe(mapRef.current);
+    }
 
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
+      resizeObserver.disconnect();
     };
   }, []);
 
