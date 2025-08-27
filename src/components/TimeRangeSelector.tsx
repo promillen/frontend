@@ -10,7 +10,7 @@ export interface TimeRange {
 }
 
 export const TIME_RANGES: TimeRange[] = [
-  { id: 'none', label: 'Current Position', hours: 0 },
+  { id: 'none', label: 'Live Locations', hours: 0 },
   { id: '1h', label: 'Last Hour', hours: 1 },
   { id: '6h', label: 'Last 6 Hours', hours: 6 },
   { id: '1d', label: 'Last Day', hours: 24 },
@@ -21,38 +21,41 @@ export const TIME_RANGES: TimeRange[] = [
 interface TimeRangeSelectorProps {
   activeRange: string;
   onRangeChange: (rangeId: string) => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   activeRange,
-  onRangeChange
+  onRangeChange,
+  isOpen,
+  onToggle
 }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const activeRangeLabel = TIME_RANGES.find(r => r.id === activeRange)?.label || 'Current Position';
+  const activeRangeLabel = TIME_RANGES.find(r => r.id === activeRange)?.label || 'Live Locations';
 
   if (!isOpen) {
     return (
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={onToggle}
         variant="secondary"
         size="sm"
-        className="absolute top-28 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card"
+        className="absolute top-28 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
       >
-        <Clock className="h-4 w-4 mr-2" />
-        {activeRangeLabel}
+        <Clock className="h-3 w-3 mr-2" />
+        <span className="text-xs">{activeRangeLabel}</span>
       </Button>
     );
   }
 
   return (
-    <Card className="absolute top-28 right-4 z-[1000] bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-28 right-4 z-[1010] bg-card/95 backdrop-blur-sm">
       <CardContent className="p-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             <span className="text-xs font-medium">Movement Tracking</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
+          <Button variant="ghost" size="sm" onClick={onToggle}>
             <X className="h-3 w-3" />
           </Button>
         </div>

@@ -60,16 +60,16 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
         onClick={onToggle}
         variant="secondary"
         size="sm"
-        className="absolute top-16 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card"
+        className="absolute top-16 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
       >
-        <Filter className="h-4 w-4 mr-2" />
-        Filter Devices
+        <Filter className="h-3 w-3 mr-2" />
+        <span className="text-xs">Filter Devices</span>
       </Button>
     );
   }
 
   return (
-    <Card className="absolute top-16 right-4 z-[1000] w-80 bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-16 right-4 z-[1010] w-80 bg-card/95 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Filter Devices</CardTitle>

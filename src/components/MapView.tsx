@@ -44,10 +44,10 @@ const MapView = () => {
   const [activeTileLayer, setActiveTileLayer] = useState('cartodb_voyager');
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [allDevices, setAllDevices] = useState<string[]>([]);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeTimeRange, setActiveTimeRange] = useState('none');
   const [selectedDeviceForLogs, setSelectedDeviceForLogs] = useState<string | null>(null);
   const [isLogViewerOpen, setIsLogViewerOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<'tile' | 'filter' | 'time' | null>(null);
   
   const { toast } = useToast();
   const { role: userRole } = useUserRole();
@@ -374,6 +374,8 @@ const MapView = () => {
       <MapTileSelector 
         activeLayer={activeTileLayer}
         onLayerChange={changeTileLayer}
+        isOpen={openMenu === 'tile'}
+        onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
       />
       
       <DeviceFilter
@@ -381,13 +383,15 @@ const MapView = () => {
         onDeviceToggle={handleDeviceToggle}
         onSelectAll={handleSelectAll}
         onSelectNone={handleSelectNone}
-        isOpen={isFilterOpen}
-        onToggle={() => setIsFilterOpen(!isFilterOpen)}
+        isOpen={openMenu === 'filter'}
+        onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
       />
       
       <TimeRangeSelector
         activeRange={activeTimeRange}
         onRangeChange={handleTimeRangeChange}
+        isOpen={openMenu === 'time'}
+        onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
       />
 
       {/* Admin Live Logs */}
