@@ -63,19 +63,19 @@ plugins:
 nav:
   - Home: index.md
   - Architecture:
-    - System Overview: architecture/overview.md
-    - Data Flow: architecture/data-flow.md
-    - Security: architecture/security.md
+    - System Overview: SYSTEM_ARCHITECTURE.md
+    - Data Flow: DATA_FLOW_GUIDE.md
+    - Security: SYSTEM_ARCHITECTURE.md
   - API Documentation:
     - Edge Function API: api/edge-function.md
     - Fly.io CoAP Interface: api/flyio-coap.md
     - Data Schemas: api/schemas.md
   - Operations:
-    - Deployment: operations/deployment.md
+    - Deployment: FLYIO_SETUP.md
     - Monitoring: operations/monitoring.md
     - Troubleshooting: operations/troubleshooting.md
   - Development:
-    - Local Setup: development/setup.md
+    - Local Setup: DEVELOPMENT_GUIDE.md
     - Testing: development/testing.md
     - Contributing: development/contributing.md
   - Reference:
