@@ -1,0 +1,41 @@
+name: Sync to Organization Repo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.SYNC_TOKEN }}
+
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+
+    - name: Add organization remote and push
+      run: |
+        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git
+        git fetch org
+        
+        # Check if there are any conflicts
+        if ! git merge-base --is-ancestor org/main HEAD && ! git merge-base --is-ancestor HEAD org/main; then
+          echo "Warning: Potential merge conflicts detected"
+          echo "Both repositories have diverged. Manual intervention may be required."
+          exit 1
+        fi
+        
+        # Push to organization repo
+        git push org main:main
+
+    - name: Check sync status
+      run: |
+        echo "✅ Successfully synced to organization repository"
+        git log --oneline -5
