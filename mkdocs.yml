@@ -1,10 +1,10 @@
 site_name: IoT Device Management System - Internal API Documentation
 site_description: Internal documentation for IoT device management system with Fly.io CoAP ingestion and Supabase backend
 site_author: Internal Engineering Team
-site_url: https://your-org.github.io/iot-device-management
+site_url: https://MOC-IoT.github.io/Frontend
 
-repo_name: iot-device-management
-repo_url: https://github.com/your-org/iot-device-management
+repo_name: Frontend
+repo_url: https://github.com/MOC-IoT/Frontend
 edit_uri: edit/main/docs/
 
 theme:
@@ -86,6 +86,6 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/your-org/iot-device-management
+      link: https://github.com/MOC-IoT/Frontend
 
-copyright: Copyright &copy; 2024 Internal Engineering Team
+copyright: Copyright &copy; 2025 Internal Engineering Team
