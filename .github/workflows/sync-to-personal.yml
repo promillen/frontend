@@ -1,0 +1,80 @@
+name: Sync from Personal Repo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.SYNC_TOKEN }}
+
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+
+    - name: Add personal remote and push
+      run: |
+        git remote add personal https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/promillen/frontend.git
+        
+        # Fetch with error handling
+        if ! git fetch personal; then
+          echo "❌ Failed to fetch from personal repository"
+          echo "Please check:"
+          echo "1. Repository name and username are correct"
+          echo "2. SYNC_TOKEN has access to the personal repository"
+          echo "3. You have push permissions to the personal repository"
+          exit 1
+        fi
+        
+        # Check if personal/main exists
+        if ! git rev-parse --verify personal/main >/dev/null 2>&1; then
+          echo "❌ personal/main branch not found"
+          echo "Available branches:"
+          git branch -r
+          exit 1
+        fi
+        
+        # Check if there are any conflicts (only if both branches exist)
+        if git rev-parse --verify personal/main >/dev/null 2>&1; then
+          if ! git merge-base --is-ancestor personal/main HEAD && ! git merge-base --is-ancestor HEAD personal/main; then
+            echo "⚠️  Warning: Potential merge conflicts detected"
+            echo "Both repositories have diverged. Manual intervention may be required."
+            echo "Personal repo latest commit: $(git log --oneline -1 personal/main)"
+            echo "Organization repo latest commit: $(git log --oneline -1 HEAD)"
+            exit 1
+          fi
+        fi
+        
+        # Push to personal repo
+        echo "🚀 Pushing to personal repository..."
+        
+        # Create a temporary branch without conflicting workflow files
+        git checkout -b temp-sync-branch
+        
+        # Remove the sync-from-personal workflow from the temp branch (we don't want it in the personal repo)
+        git rm .github/workflows/sync-from-personal.yml 2>/dev/null || true
+        
+        # If there's a sync-to-org.yml in this repo, remove it too
+        git rm .github/workflows/sync-to-org.yml 2>/dev/null || true
+        
+        git commit -m "Remove conflicting sync workflows for personal push" --allow-empty
+        
+        # Push the clean branch to personal repo
+        git push personal temp-sync-branch:main
+        
+        # Clean up temp branch
+        git checkout main
+        git branch -D temp-sync-branch
+
+    - name: Check sync status
+      run: |
+        echo "✅ Successfully synced to personal repository"
+        git log --oneline -5
