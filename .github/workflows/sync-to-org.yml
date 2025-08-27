@@ -22,17 +22,32 @@ jobs:
 
     - name: Add organization remote and push
       run: |
-        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git
-        git fetch org
+        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ORGANIZATION_NAME/REPO_NAME.git
         
-        # Check if there are any conflicts
-        if ! git merge-base --is-ancestor org/main HEAD && ! git merge-base --is-ancestor HEAD org/main; then
-          echo "Warning: Potential merge conflicts detected"
-          echo "Both repositories have diverged. Manual intervention may be required."
-          exit 1
+        # Try to fetch, but don't fail if repo is empty
+        echo "📡 Fetching from organization repository..."
+        git fetch org || echo "ℹ️  Organization repository appears to be empty (this is normal for initial setup)"
+        
+        # Check if org/main exists
+        if git rev-parse --verify org/main >/dev/null 2>&1; then
+          echo "✅ Organization repository has existing main branch"
+          
+          # Check for conflicts since both repos have content
+          if ! git merge-base --is-ancestor org/main HEAD && ! git merge-base --is-ancestor HEAD org/main; then
+            echo "⚠️  Warning: Potential merge conflicts detected"
+            echo "Both repositories have diverged. Manual intervention may be required."
+            echo "Organization repo latest commit: $(git log --oneline -1 org/main)"
+            echo "Personal repo latest commit: $(git log --oneline -1 HEAD)"
+            exit 1
+          fi
+          
+          echo "✅ No conflicts detected"
+        else
+          echo "ℹ️  Organization repository is empty - performing initial sync"
         fi
         
-        # Push to organization repo
+        # Push to organization repo (this will create the main branch if it doesn't exist)
+        echo "🚀 Pushing to organization repository..."
         git push org main:main
 
     - name: Check sync status
