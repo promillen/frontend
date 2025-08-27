@@ -287,11 +287,7 @@ const DeviceList = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Device Management</h1>
-            <p className="text-muted-foreground">Manage and monitor your IoT devices</p>
-          </div>
+        <div className="flex justify-end items-center">
           <div className="flex gap-2">
             <Button onClick={fetchDevices} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
