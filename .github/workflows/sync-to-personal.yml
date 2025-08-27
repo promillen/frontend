@@ -60,8 +60,8 @@ jobs:
         
         git commit -m "Remove conflicting sync workflows for org push" --allow-empty
         
-        # Push the clean branch to org repo
-        git push org temp-sync-branch:main
+        # Push the clean branch to org repo (force push to resolve conflicts)
+        git push --force org temp-sync-branch:main
         
         # Clean up temp branch
         git checkout main
