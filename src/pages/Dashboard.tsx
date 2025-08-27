@@ -88,18 +88,8 @@ const Dashboard = () => {
             
             <main className="flex-1 p-6 bg-gradient-to-br from-background to-muted/20 flex flex-col">
               {activeView === 'map' && (
-                <div className="h-full flex flex-col space-y-6">
-                  <div className="layout-transition flex-shrink-0">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                      Device Locations
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                      View real-time device locations on the interactive map
-                    </p>
-                  </div>
-                  <div className="bg-card rounded-xl border shadow-lg overflow-hidden layout-transition hover:shadow-xl flex-1">
-                    <MapView />
-                  </div>
+                <div className="bg-card rounded-xl border shadow-lg overflow-hidden layout-transition hover:shadow-xl h-full">
+                  <MapView />
                 </div>
               )}
               
