@@ -1,7 +1,51 @@
 name: Sync to Organization Repo
 
-on: push: branches: [main] workflow_dispatch:
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-concurrency: group: sync-to-org cancel-in-progress: true
+concurrency:
+  group: sync-to-org
+  cancel-in-progress: true
 
-jobs: sync: if: github.event_name != 'push' || (github.event.head_commit.message != '' && !contains(github.event.head_commit.message, '[sync:org->personal]') && !contains(github.event.head_commit.message, '[skip ci]')) runs-on: ubuntu-latest steps: - uses: actions/checkout@v4 with: fetch-depth: 0 token: ${{ secrets.SYNC_TOKEN }} - name: Configure Git run: | git config --global user.name "github-actions[bot]" git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" - name: Add organization remote run: | git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git git fetch org main || true - name: Create temp sync branch run: git checkout -B temp-sync-branch - name: Preserve destination workflows (org repo) run: | if git rev-parse --verify org/main >/dev/null 2>&1; then git checkout org/main -- .github/workflows || true git add .github/workflows || true git commit -m "[skip ci][sync:personal->org] Preserve org workflows" --allow-empty fi - name: Force push run: git push --force org temp-sync-branch:main - name: Cleanup run: | git checkout -B main git branch -D temp-sync-branch || true
+jobs:
+  sync:
+    # Skip if this push came from the org -> personal mirror or is a skip-ci commit
+    if: github.event_name != 'push' || (github.event.head_commit.message != '' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[sync:org->personal]'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNC_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add organization remote
+        run: |
+          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git
+          git fetch org main || true
+
+      - name: Create temp sync branch
+        run: git checkout -B temp-sync-branch
+
+      - name: Preserve destination workflows (org repo)
+        run: |
+          if git rev-parse --verify org/main >/dev/null 2>&1; then
+            git checkout org/main -- .github/workflows || true
+            git add .github/workflows || true
+            git commit -m "[skip ci][sync:personal->org] Preserve org workflows" --allow-empty
+          fi
+
+      - name: Force push to org main
+        run: git push --force org temp-sync-branch:main
+
+      - name: Cleanup
+        run: |
+          git checkout -B main
+          git branch -D temp-sync-branch || true
