@@ -33,11 +33,6 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const { role: userRole } = useUserRole();
 
-  // Only show for admin users
-  if (userRole !== 'admin') {
-    return null;
-  }
-
   useEffect(() => {
     if (isOpen && deviceId) {
       connectWebSocket();
@@ -133,7 +128,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     }
   };
 
-  if (!isOpen || !deviceId) {
+  if (!isOpen || !deviceId || userRole !== 'admin') {
     return null;
   }
 
