@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Calendar } from 'lucide-react';
+import { Clock, Calendar, X } from 'lucide-react';
 
 export interface TimeRange {
   id: string;
@@ -27,12 +27,34 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   activeRange,
   onRangeChange
 }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const activeRangeLabel = TIME_RANGES.find(r => r.id === activeRange)?.label || 'Current Position';
+
+  if (!isOpen) {
+    return (
+      <Button
+        onClick={() => setIsOpen(true)}
+        variant="secondary"
+        size="sm"
+        className="absolute top-28 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card"
+      >
+        <Clock className="h-4 w-4 mr-2" />
+        {activeRangeLabel}
+      </Button>
+    );
+  }
+
   return (
-    <Card className="absolute bottom-4 left-4 z-[1000] bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-28 right-4 z-[1000] bg-card/95 backdrop-blur-sm">
       <CardContent className="p-2">
-        <div className="flex items-center gap-1 mb-2">
-          <Clock className="h-3 w-3" />
-          <span className="text-xs font-medium">Movement Tracking</span>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span className="text-xs font-medium">Movement Tracking</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
+            <X className="h-3 w-3" />
+          </Button>
         </div>
         <div className="flex flex-col gap-1">
           {TIME_RANGES.map((range) => (

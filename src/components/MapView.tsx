@@ -66,6 +66,13 @@ const MapView = () => {
       }).addTo(map.current);
     }
 
+    // Fix for classic mode - invalidate size after container is ready
+    setTimeout(() => {
+      if (map.current) {
+        map.current.invalidateSize();
+      }
+    }, 100);
+
     return () => {
       if (map.current) {
         map.current.remove();

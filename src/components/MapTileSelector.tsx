@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Map, Satellite, Mountain, Waves } from 'lucide-react';
+import { Map, Satellite, Mountain, Waves, X } from 'lucide-react';
 
 export interface TileLayer {
   id: string;
@@ -48,9 +48,31 @@ interface MapTileSelectorProps {
 }
 
 const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerChange }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  if (!isOpen) {
+    return (
+      <Button
+        onClick={() => setIsOpen(true)}
+        variant="secondary"
+        size="sm"
+        className="absolute top-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card"
+      >
+        <Map className="h-4 w-4 mr-2" />
+        Map Style
+      </Button>
+    );
+  }
+
   return (
     <Card className="absolute top-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm">
       <CardContent className="p-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium">Map Style</span>
+          <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
         <div className="flex flex-col gap-1">
           {TILE_LAYERS.map((layer) => (
             <Button
