@@ -22,7 +22,7 @@ jobs:
 
     - name: Add organization remote and push
       run: |
-        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/ORGANIZATION_NAME/REPO_NAME.git
+        git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git
         
         # Try to fetch, but don't fail if repo is empty
         echo "📡 Fetching from organization repository..."
