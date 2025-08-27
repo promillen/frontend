@@ -1,41 +1,51 @@
 name: Sync to Personal Repo
 
-on: push: branches: [main] workflow_dispatch:
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-concurrency: group: sync-to-personal cancel-in-progress: true
+concurrency:
+  group: sync-to-personal
+  cancel-in-progress: true
 
-jobs: sync: # Skip if this was a sync commit or [skip ci] from the other side if: github.event_name != 'push' || (github.event.head_commit.message != '' && !contains(github.event.head_commit.message, '[sync:personal->org]') && !contains(github.event.head_commit.message, '[skip ci]')) runs-on: ubuntu-latest steps: - name: Checkout code uses: actions/checkout@v4 with: fetch-depth: 0 token: ${{ secrets.SYNC_TOKEN }}
+jobs:
+  sync:
+    # Skip if this push came from the personal -> org mirror or is a skip-ci commit
+    if: github.event_name != 'push' || (github.event.head_commit.message != '' && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[sync:personal->org]'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNC_TOKEN }}
 
-  - name: Configure Git
-    run: |
-      git config --global user.name "github-actions[bot]"
-      git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-  - name: Add personal remote
-    run: |
-      git remote add personal https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/promillen/frontend.git
-      git fetch personal main || true
+      - name: Add personal remote
+        run: |
+          git remote add personal https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/promillen/frontend.git
+          git fetch personal main || true
 
-  - name: Create temp sync branch from current HEAD
-    run: |
-      git checkout -B temp-sync-branch
+      - name: Create temp sync branch
+        run: git checkout -B temp-sync-branch
 
-  - name: Preserve destination workflows (personal repo)
-    run: |
-      # Keep the personal repo's workflows so we don't delete them by force-push
-      if git rev-parse --verify personal/main >/dev/null 2>&1; then
-        git checkout personal/main -- .github/workflows || true
-        git add .github/workflows || true
-        git commit -m "[skip ci][sync:org->personal] Preserve personal workflows" --allow-empty
-      else
-        echo "personal/main not found, skipping workflow preservation"
-      fi
+      - name: Preserve destination workflows (personal repo)
+        run: |
+          if git rev-parse --verify personal/main >/dev/null 2>&1; then
+            git checkout personal/main -- .github/workflows || true
+            git add .github/workflows || true
+            git commit -m "[skip ci][sync:org->personal] Preserve personal workflows" --allow-empty
+          fi
 
-  - name: Force push temp branch to personal/main
-    run: |
-      git push --force personal temp-sync-branch:main
+      - name: Force push to personal main
+        run: git push --force personal temp-sync-branch:main
 
-  - name: Cleanup
-    run: |
-      git checkout -B main
-      git branch -D temp-sync-branch || true
+      - name: Cleanup
+        run: |
+          git checkout -B main
+          git branch -D temp-sync-branch || true
