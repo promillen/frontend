@@ -24,7 +24,7 @@ jobs:
 
       - name: Add organization remote
         run: |
-          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Frontend.git
+          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Dashboard.git
           git fetch org main || true
 
       - name: Create temp sync branch
