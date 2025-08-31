@@ -11,7 +11,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout source repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -22,26 +22,12 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Remove workflows (don’t copy them to org repo)
+        run: rm -rf .github/workflows
+
       - name: Add organization remote
         run: |
-          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Dashboard.git
-          git fetch org main || true
-
-      - name: Create temp sync branch
-        run: git checkout -B temp-sync-branch
-
-      - name: Preserve destination workflows (org repo)
-        run: |
-          if git rev-parse --verify org/main >/dev/null 2>&1; then
-            git checkout org/main -- .github/workflows || true
-            git add .github/workflows || true
-            git commit -m "[skip ci][sync:personal->org] Preserve org workflows" --allow-empty
-          fi
+          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Landing-page.git
 
       - name: Force push to org main
-        run: git push --force org temp-sync-branch:main
-
-      - name: Cleanup
-        run: |
-          git checkout -B main
-          git branch -D temp-sync-branch || true
+        run: git push --force org HEAD:main
