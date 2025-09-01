@@ -82,54 +82,48 @@ const Dashboard = () => {
               {/* Map Controls - only show for map view */}
               {activeView === 'map' && (
                 <>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <MapTileSelector
-                      activeLayer={activeTileLayer}
-                      onLayerChange={setActiveTileLayer}
-                      isOpen={openMenu === 'tile'}
-                      onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
-                    />
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <DeviceFilter
-                      selectedDevices={selectedDevices}
-                      onDeviceToggle={(deviceId) => {
-                        setSelectedDevices(prev => 
-                          prev.includes(deviceId) 
-                            ? prev.filter(id => id !== deviceId)
-                            : [...prev, deviceId]
-                        );
-                      }}
-                      onSelectAll={() => {
-                        // Fetch all devices and select them
-                        const fetchAndSelectAll = async () => {
-                          try {
-                            const { data } = await supabase
-                              .from('device_config')
-                              .select('devid');
-                            if (data) {
-                              const allDeviceIds = data.map(d => d.devid);
-                              setSelectedDevices(allDeviceIds);
-                            }
-                          } catch (error) {
-                            console.error('Error fetching devices:', error);
+                  <MapTileSelector
+                    activeLayer={activeTileLayer}
+                    onLayerChange={setActiveTileLayer}
+                    isOpen={openMenu === 'tile'}
+                    onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
+                  />
+                  <DeviceFilter
+                    selectedDevices={selectedDevices}
+                    onDeviceToggle={(deviceId) => {
+                      setSelectedDevices(prev => 
+                        prev.includes(deviceId) 
+                          ? prev.filter(id => id !== deviceId)
+                          : [...prev, deviceId]
+                      );
+                    }}
+                    onSelectAll={() => {
+                      // Fetch all devices and select them
+                      const fetchAndSelectAll = async () => {
+                        try {
+                          const { data } = await supabase
+                            .from('device_config')
+                            .select('devid');
+                          if (data) {
+                            const allDeviceIds = data.map(d => d.devid);
+                            setSelectedDevices(allDeviceIds);
                           }
-                        };
-                        fetchAndSelectAll();
-                      }}
-                      onSelectNone={() => setSelectedDevices([])}
-                      isOpen={openMenu === 'filter'}
-                      onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
-                    />
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <TimeRangeSelector
-                      activeRange={activeTimeRange}
-                      onRangeChange={setActiveTimeRange}
-                      isOpen={openMenu === 'time'}
-                      onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
-                    />
-                  </div>
+                        } catch (error) {
+                          console.error('Error fetching devices:', error);
+                        }
+                      };
+                      fetchAndSelectAll();
+                    }}
+                    onSelectNone={() => setSelectedDevices([])}
+                    isOpen={openMenu === 'filter'}
+                    onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
+                  />
+                  <TimeRangeSelector
+                    activeRange={activeTimeRange}
+                    onRangeChange={setActiveTimeRange}
+                    isOpen={openMenu === 'time'}
+                    onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
+                  />
                 </>
               )}
             </div>
