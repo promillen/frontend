@@ -29,7 +29,7 @@ const Auth = () => {
     if (user && session) {
       handleRedirectAfterAuth();
     }
-  }, [user, session, navigate]);
+  }, [user, session, redirectUrl]);
 
   const handleRedirectAfterAuth = async () => {
     if (redirectUrl) {
@@ -39,7 +39,7 @@ const Auth = () => {
         
         if (isDocsRedirect) {
           // Check if user has developer role for docs access
-          const { data: roleData } = await supabase
+          const { data: roleData, error } = await supabase
             .from('user_roles')
             .select('role')
             .eq('user_id', user!.id)
@@ -142,7 +142,7 @@ const Auth = () => {
           title: "Success",
           description: "Signed in successfully!",
         });
-        navigate('/');
+        // Don't navigate here - let the useEffect handle the redirect based on redirectUrl
       }
     } catch (error) {
       toast({
