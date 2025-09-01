@@ -62,7 +62,7 @@ const Dashboard = () => {
             </div>
             
             {/* Map Controls and Test Role Switcher */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 relative">
               {/* Map Controls - only show for map view */}
               {activeView === 'map' && (
                 <>

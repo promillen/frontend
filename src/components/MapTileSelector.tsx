@@ -57,7 +57,7 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
         onClick={onToggle}
         variant="secondary"
         size="sm"
-        className="absolute top-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm hover:bg-card h-9 w-32 px-3"
+        className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
       >
         <Map className="h-4 w-4 mr-2" />
         <span className="text-sm">Map Style</span>
@@ -66,7 +66,7 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
   }
 
   return (
-    <Card className="absolute top-4 right-4 z-[1010] bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-14 right-4 z-[1010] bg-card/95 backdrop-blur-sm">
       <CardContent className="p-2">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium">Map Style</span>
