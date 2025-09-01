@@ -69,7 +69,7 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
   }
 
   return (
-    <Card className="absolute top-14 right-4 z-[1010] w-80 bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-14 right-4 z-[9999] w-80 bg-background border shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Filter Devices</CardTitle>

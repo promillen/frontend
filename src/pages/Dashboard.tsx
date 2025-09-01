@@ -61,7 +61,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Map Controls and Test Role Switcher */}
+            {/* Map Controls */}
             <div className="flex items-center space-x-3 relative">
               {/* Map Controls - only show for map view */}
               {activeView === 'map' && (
@@ -109,27 +109,6 @@ const Dashboard = () => {
                     onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
                   />
                 </>
-              )}
-              
-              {/* Test Role Switcher for Developers */}
-              {isActualDeveloper && (
-                <div className="flex items-center gap-2">
-                  {isTestMode && <Badge variant="secondary" className="text-xs">Test Mode</Badge>}
-                  <Select 
-                    value={testRole || 'developer'} 
-                    onValueChange={(value) => setTestRole(value === 'developer' ? null : value as any)}
-                  >
-                    <SelectTrigger className="w-32 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="admin">Test as Admin</SelectItem>
-                      <SelectItem value="moderator">Test as Moderator</SelectItem>
-                      <SelectItem value="user">Test as User</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               )}
             </div>
           </header>

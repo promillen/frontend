@@ -1,8 +1,10 @@
 import { MapPin, List, Users, Settings, Home, Activity, BarChart3, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTestRole } from '@/contexts/TestRoleContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +26,8 @@ interface AppSidebarProps {
 
 const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   const { user, signOut } = useAuth();
-  const { role, isDeveloper } = useUserRole();
+  const { role, isDeveloper, isActualDeveloper, isTestMode } = useUserRole();
+  const { testRole, setTestRole } = useTestRole();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
@@ -124,6 +127,31 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
                   </Button>
                 )}
               </div>
+              
+              {/* Test Role Selector for Developers */}
+              {isActualDeveloper && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-sidebar-foreground/60">View as:</span>
+                    {isTestMode && <Badge variant="secondary" className="text-xs">Test Mode</Badge>}
+                  </div>
+                  <Select 
+                    value={testRole || 'developer'} 
+                    onValueChange={(value) => setTestRole(value === 'developer' ? null : value as any)}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999] bg-background border">
+                      <SelectItem value="developer">Developer</SelectItem>
+                      <SelectItem value="admin">Test as Admin</SelectItem>
+                      <SelectItem value="moderator">Test as Moderator</SelectItem>
+                      <SelectItem value="user">Test as User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
               <p className="text-xs text-sidebar-foreground/60 truncate">
                 {user?.email}
               </p>

@@ -48,7 +48,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   }
 
   return (
-    <Card className="absolute top-14 right-4 z-[1010] bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-14 right-4 z-[9999] bg-background border shadow-lg">
       <CardContent className="p-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1">

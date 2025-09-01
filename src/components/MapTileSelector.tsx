@@ -66,7 +66,7 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
   }
 
   return (
-    <Card className="absolute top-14 right-4 z-[1010] bg-card/95 backdrop-blur-sm">
+    <Card className="absolute top-14 right-4 z-[9999] bg-background border shadow-lg">
       <CardContent className="p-2">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium">Map Style</span>
