@@ -2,18 +2,31 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTestRole } from '@/contexts/TestRoleContext';
+import { supabase } from '@/integrations/supabase/client';
 import AppSidebar from '@/components/AppSidebar';
 import MapView from '@/components/MapView';
 import DeviceList from '@/components/DeviceList';
 import UserManagement from '@/components/UserManagement';
+import MapTileSelector, { TILE_LAYERS } from '@/components/MapTileSelector';
+import DeviceFilter from '@/components/DeviceFilter';
+import TimeRangeSelector from '@/components/TimeRangeSelector';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const Dashboard = () => {
   const { loading: authLoading } = useAuth();
-  const { loading: roleLoading, isDeveloper } = useUserRole();
+  const { loading: roleLoading, isActualDeveloper, isTestMode } = useUserRole();
+  const { testRole, setTestRole } = useTestRole();
   const [activeView, setActiveView] = useState<'map' | 'devices' | 'users'>('map');
+  
+  // Map controls state
+  const [activeTileLayer, setActiveTileLayer] = useState('cartodb_voyager');
+  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  const [activeTimeRange, setActiveTimeRange] = useState('none');
+  const [openMenu, setOpenMenu] = useState<'tile' | 'filter' | 'time' | null>(null);
 
   if (authLoading || roleLoading) {
     return (
@@ -48,18 +61,75 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Docs Button for Developers */}
+            {/* Map Controls and Test Role Switcher */}
             <div className="flex items-center space-x-3">
-              {isDeveloper && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => window.open('https://docs.moc-iot.com', '_blank')}
-                  className="gap-2 layout-transition hover:scale-105 active:scale-95 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  <span className="hidden sm:inline">Docs</span>
-                </Button>
+              {/* Map Controls - only show for map view */}
+              {activeView === 'map' && (
+                <>
+                  <MapTileSelector
+                    activeLayer={activeTileLayer}
+                    onLayerChange={setActiveTileLayer}
+                    isOpen={openMenu === 'tile'}
+                    onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
+                  />
+                  <DeviceFilter
+                    selectedDevices={selectedDevices}
+                    onDeviceToggle={(deviceId) => {
+                      setSelectedDevices(prev => 
+                        prev.includes(deviceId) 
+                          ? prev.filter(id => id !== deviceId)
+                          : [...prev, deviceId]
+                      );
+                    }}
+                    onSelectAll={() => {
+                      // Fetch all devices and select them
+                      const fetchAndSelectAll = async () => {
+                        try {
+                          const { data } = await supabase
+                            .from('device_config')
+                            .select('devid');
+                          if (data) {
+                            const allDeviceIds = data.map(d => d.devid);
+                            setSelectedDevices(allDeviceIds);
+                          }
+                        } catch (error) {
+                          console.error('Error fetching devices:', error);
+                        }
+                      };
+                      fetchAndSelectAll();
+                    }}
+                    onSelectNone={() => setSelectedDevices([])}
+                    isOpen={openMenu === 'filter'}
+                    onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
+                  />
+                  <TimeRangeSelector
+                    activeRange={activeTimeRange}
+                    onRangeChange={setActiveTimeRange}
+                    isOpen={openMenu === 'time'}
+                    onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
+                  />
+                </>
+              )}
+              
+              {/* Test Role Switcher for Developers */}
+              {isActualDeveloper && (
+                <div className="flex items-center gap-2">
+                  {isTestMode && <Badge variant="secondary" className="text-xs">Test Mode</Badge>}
+                  <Select 
+                    value={testRole || 'developer'} 
+                    onValueChange={(value) => setTestRole(value === 'developer' ? null : value as any)}
+                  >
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="developer">Developer</SelectItem>
+                      <SelectItem value="admin">Test as Admin</SelectItem>
+                      <SelectItem value="moderator">Test as Moderator</SelectItem>
+                      <SelectItem value="user">Test as User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
           </header>
@@ -67,7 +137,12 @@ const Dashboard = () => {
           <main className={`flex-1 bg-gradient-to-br from-background to-muted/20 flex flex-col ${activeView === 'map' ? '' : 'p-6'}`}>
             {activeView === 'map' && (
               <div className="flex-1">
-                <MapView />
+                <MapView 
+                  activeTileLayer={activeTileLayer}
+                  selectedDevices={selectedDevices}
+                  activeTimeRange={activeTimeRange}
+                  externalControls={true}
+                />
               </div>
             )}
             

@@ -1,4 +1,4 @@
-import { MapPin, List, Users, Settings, Home, Activity, BarChart3 } from 'lucide-react';
+import { MapPin, List, Users, Settings, Home, Activity, BarChart3, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,7 @@ interface AppSidebarProps {
 
 const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   const { user, signOut } = useAuth();
-  const { role } = useUserRole();
+  const { role, isDeveloper } = useUserRole();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
@@ -79,7 +79,7 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {role === 'admin' && (
+        {(role === 'admin' || role === 'developer') && (
           <SidebarGroup>
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -110,6 +110,18 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
                   <Badge variant="outline" className="capitalize text-xs bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
                     {role}
                   </Badge>
+                )}
+                {/* Docs Button for Developers */}
+                {isDeveloper && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => window.open('https://docs.moc-iot.com', '_blank')}
+                    className="gap-1 text-xs h-6 px-2 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-blue-200"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    <span>Docs</span>
+                  </Button>
                 )}
               </div>
               <p className="text-xs text-sidebar-foreground/60 truncate">

@@ -33,7 +33,19 @@ interface LocationSensorData {
   };
 }
 
-const MapView = () => {
+interface MapViewProps {
+  activeTileLayer?: string;
+  selectedDevices?: string[];
+  activeTimeRange?: string;
+  externalControls?: boolean;
+}
+
+const MapView = ({ 
+  activeTileLayer: externalActiveTileLayer,
+  selectedDevices: externalSelectedDevices,
+  activeTimeRange: externalActiveTimeRange,
+  externalControls = false
+}: MapViewProps = {}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const markers = useRef<{ [key: string]: L.Marker }>({});
@@ -41,13 +53,18 @@ const MapView = () => {
   const currentTileLayer = useRef<L.TileLayer | null>(null);
   
   const [locations, setLocations] = useState<LocationSensorData[]>([]);
-  const [activeTileLayer, setActiveTileLayer] = useState('cartodb_voyager');
-  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  const [internalActiveTileLayer, setInternalActiveTileLayer] = useState('cartodb_voyager');
+  const [internalSelectedDevices, setInternalSelectedDevices] = useState<string[]>([]);
   const [allDevices, setAllDevices] = useState<string[]>([]);
-  const [activeTimeRange, setActiveTimeRange] = useState('none');
+  const [internalActiveTimeRange, setInternalActiveTimeRange] = useState('none');
   const [selectedDeviceForLogs, setSelectedDeviceForLogs] = useState<string | null>(null);
   const [isLogViewerOpen, setIsLogViewerOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<'tile' | 'filter' | 'time' | null>(null);
+  
+  // Use external state if provided, otherwise use internal state
+  const activeTileLayer = externalControls ? externalActiveTileLayer! : internalActiveTileLayer;
+  const selectedDevices = externalControls ? externalSelectedDevices! : internalSelectedDevices;
+  const activeTimeRange = externalControls ? externalActiveTimeRange! : internalActiveTimeRange;
   
   const { toast } = useToast();
   const { role: userRole } = useUserRole();
@@ -110,7 +127,10 @@ const MapView = () => {
       attribution: layer.attribution
     }).addTo(map.current);
 
-    setActiveTileLayer(layerId);
+    // Update internal state only if not using external controls
+    if (!externalControls) {
+      setInternalActiveTileLayer(layerId);
+    }
   };
 
   const fetchLocations = async (timeRangeHours = 0) => {
@@ -153,9 +173,9 @@ const MapView = () => {
       const deviceIds = [...new Set((data || []).map(location => location.devid))];
       setAllDevices(deviceIds);
       
-      // Initialize selected devices if empty
-      if (selectedDevices.length === 0) {
-        setSelectedDevices(deviceIds);
+      // Initialize selected devices if empty and not using external controls
+      if (!externalControls && internalSelectedDevices.length === 0) {
+        setInternalSelectedDevices(deviceIds);
       }
       
       updateMapMarkers(data || [], timeRangeHours);
@@ -297,7 +317,9 @@ const MapView = () => {
   };
 
   const handleDeviceToggle = (deviceId: string) => {
-    setSelectedDevices(prev => {
+    if (externalControls) return; // Don't handle if using external controls
+    
+    setInternalSelectedDevices(prev => {
       const updated = prev.includes(deviceId)
         ? prev.filter(id => id !== deviceId)
         : [...prev, deviceId];
@@ -306,15 +328,19 @@ const MapView = () => {
   };
 
   const handleSelectAll = () => {
-    setSelectedDevices([...allDevices]);
+    if (externalControls) return; // Don't handle if using external controls
+    setInternalSelectedDevices([...allDevices]);
   };
 
   const handleSelectNone = () => {
-    setSelectedDevices([]);
+    if (externalControls) return; // Don't handle if using external controls
+    setInternalSelectedDevices([]);
   };
 
   const handleTimeRangeChange = (rangeId: string) => {
-    setActiveTimeRange(rangeId);
+    if (externalControls) return; // Don't handle if using external controls
+    
+    setInternalActiveTimeRange(rangeId);
     const range = TIME_RANGES.find(r => r.id === rangeId);
     if (range) {
       fetchLocations(range.hours);
@@ -370,29 +396,33 @@ const MapView = () => {
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full" />
       
-      {/* Map Controls */}
-      <MapTileSelector 
-        activeLayer={activeTileLayer}
-        onLayerChange={changeTileLayer}
-        isOpen={openMenu === 'tile'}
-        onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
-      />
-      
-      <DeviceFilter
-        selectedDevices={selectedDevices}
-        onDeviceToggle={handleDeviceToggle}
-        onSelectAll={handleSelectAll}
-        onSelectNone={handleSelectNone}
-        isOpen={openMenu === 'filter'}
-        onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
-      />
-      
-      <TimeRangeSelector
-        activeRange={activeTimeRange}
-        onRangeChange={handleTimeRangeChange}
-        isOpen={openMenu === 'time'}
-        onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
-      />
+      {/* Map Controls - only show if not using external controls */}
+      {!externalControls && (
+        <>
+          <MapTileSelector 
+            activeLayer={activeTileLayer}
+            onLayerChange={changeTileLayer}
+            isOpen={openMenu === 'tile'}
+            onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
+          />
+          
+          <DeviceFilter
+            selectedDevices={selectedDevices}
+            onDeviceToggle={handleDeviceToggle}
+            onSelectAll={handleSelectAll}
+            onSelectNone={handleSelectNone}
+            isOpen={openMenu === 'filter'}
+            onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
+          />
+          
+          <TimeRangeSelector
+            activeRange={activeTimeRange}
+            onRangeChange={handleTimeRangeChange}
+            isOpen={openMenu === 'time'}
+            onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
+          />
+        </>
+      )}
 
       {/* Admin Live Logs */}
       {userRole === 'admin' && (
