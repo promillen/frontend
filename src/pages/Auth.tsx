@@ -34,35 +34,46 @@ const Auth = () => {
   const handleRedirectAfterAuth = async () => {
     if (redirectUrl) {
       try {
-        // Check if user has developer role for docs access
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user!.id)
-          .single();
+        // Check if this is a docs.moc-iot.com redirect
+        const isDocsRedirect = redirectUrl.includes('docs.moc-iot.com');
+        
+        if (isDocsRedirect) {
+          // Check if user has developer role for docs access
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user!.id)
+            .single();
 
-        if (roleData?.role === 'developer') {
-          // Get JWT token for docs authentication
-          const token = session!.access_token;
-          
-          // Redirect to docs callback with token
-          const callbackUrl = new URL(redirectUrl);
-          callbackUrl.searchParams.set('token', token);
-          
-          window.location.href = callbackUrl.toString();
-          return;
+          if (roleData?.role === 'developer' || roleData?.role === 'admin') {
+            // Get JWT token for docs authentication
+            const token = session!.access_token;
+            
+            // Redirect to docs callback with token
+            const callbackUrl = new URL(redirectUrl);
+            callbackUrl.searchParams.set('token', token);
+            
+            window.location.href = callbackUrl.toString();
+            return;
+          } else {
+            toast({
+              title: "Access Denied",
+              description: "Developer access required for documentation.",
+              variant: "destructive",
+            });
+            // Stay on auth page for non-developers trying to access docs
+            return;
+          }
         } else {
-          toast({
-            title: "Access Denied",
-            description: "Developer access required for documentation.",
-            variant: "destructive",
-          });
+          // For other redirects, just go to the URL
+          window.location.href = redirectUrl;
+          return;
         }
       } catch (error) {
-        console.error('Error checking role:', error);
+        console.error('Error handling redirect:', error);
         toast({
           title: "Error",
-          description: "Failed to verify access permissions.",
+          description: "Failed to process redirect.",
           variant: "destructive",
         });
       }
