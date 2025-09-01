@@ -48,22 +48,8 @@ const Auth = () => {
           console.log('Role check result:', { roleData, error });
 
           if (roleData?.role === 'developer' || roleData?.role === 'admin') {
-            // Set cross-domain cookies for docs authentication
-            const token = session!.access_token;
-            
-            // Set cookies with proper domain settings for cross-subdomain access
-            const cookieOptions = [
-              'Secure',
-              'SameSite=Lax', 
-              'Path=/',
-              'Domain=.moc-iot.com',
-              `Max-Age=${24 * 60 * 60}` // 24 hours
-            ].join('; ');
-
-            document.cookie = `moc-auth-token=${token}; ${cookieOptions}`;
-            document.cookie = `moc-session=authenticated; ${cookieOptions}`;
-            
-            console.log('Set cross-domain cookies, redirecting to:', redirectUrl);
+            // For docs redirects, redirect directly (docs site now has its own auth)
+            console.log('Developer access confirmed, redirecting to:', redirectUrl);
             window.location.href = redirectUrl;
             return;
           } else {
