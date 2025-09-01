@@ -31,7 +31,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const websocketRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { role: userRole } = useUserRole();
+  const { role: userRole, canModifyData } = useUserRole();
 
   useEffect(() => {
     if (isOpen && deviceId) {
@@ -128,7 +128,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     }
   };
 
-  if (!isOpen || !deviceId || userRole !== 'admin') {
+  if (!isOpen || !deviceId || !canModifyData) {
     return null;
   }
 

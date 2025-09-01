@@ -76,7 +76,7 @@ export default async function handler(
         });
     }
 
-    const isDeveloper = roleData.role === 'developer' || roleData.role === 'admin';
+    const isDeveloper = roleData.role === 'developer';
 
     return response.status(200)
       .setHeader('Access-Control-Allow-Origin', 'https://docs.moc-iot.com')

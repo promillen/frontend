@@ -40,7 +40,7 @@ export const checkDeveloperAuth = async (): Promise<AuthCheckResponse> => {
       };
     }
 
-    const isDeveloper = roleData.role === 'developer' || roleData.role === 'admin';
+    const isDeveloper = roleData.role === 'developer';
 
     return {
       authenticated: true,

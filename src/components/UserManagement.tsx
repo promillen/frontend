@@ -14,12 +14,12 @@ interface UserProfile {
   created_at: string;
   updated_at: string;
   user_roles: {
-    role: 'admin' | 'moderator' | 'user';
+    role: 'admin' | 'moderator' | 'user' | 'developer';
   }[];
 }
 
 const UserManagement = () => {
-  const { role: currentUserRole } = useUserRole();
+  const { role: currentUserRole, canManageUsers } = useUserRole();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -65,7 +65,7 @@ const UserManagement = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'moderator' | 'user') => {
+  const updateUserRole = async (userId: string, newRole: 'admin' | 'moderator' | 'user' | 'developer') => {
     try {
       // First, delete existing role
       await supabase
@@ -108,12 +108,12 @@ const UserManagement = () => {
   };
 
   useEffect(() => {
-    if (currentUserRole === 'admin') {
+    if (canManageUsers) {
       fetchUsers();
     } else {
       setLoading(false);
     }
-  }, [currentUserRole]);
+  }, [canManageUsers]);
 
   if (loading) {
     return (
@@ -123,7 +123,7 @@ const UserManagement = () => {
     );
   }
 
-  if (currentUserRole !== 'admin') {
+  if (!canManageUsers) {
     return (
       <Card>
         <CardHeader>
@@ -153,7 +153,7 @@ const UserManagement = () => {
                 <div className="flex items-center space-x-2">
                   <Select
                     value={user.user_roles?.[0]?.role || 'user'}
-                    onValueChange={(value: 'admin' | 'moderator' | 'user') => 
+                    onValueChange={(value: 'admin' | 'moderator' | 'user' | 'developer') => 
                       updateUserRole(user.id, value)
                     }
                   >
@@ -164,6 +164,7 @@ const UserManagement = () => {
                       <SelectItem value="user">User</SelectItem>
                       <SelectItem value="moderator">Moderator</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="developer">Developer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

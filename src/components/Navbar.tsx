@@ -13,7 +13,7 @@ interface NavbarProps {
 
 const Navbar = ({ activeView, onViewChange }: NavbarProps) => {
   const { user, signOut } = useAuth();
-  const { role } = useUserRole();
+  const { role, canManageUsers } = useUserRole();
   const { layout, toggleLayout } = useLayout();
 
   return (
@@ -39,7 +39,7 @@ const Navbar = ({ activeView, onViewChange }: NavbarProps) => {
                 <List className="h-4 w-4 mr-2" />
                 Devices
               </Button>
-              {role === 'admin' && (
+              {canManageUsers && (
                 <Button
                   variant={activeView === 'users' ? 'default' : 'ghost'}
                   size="sm"

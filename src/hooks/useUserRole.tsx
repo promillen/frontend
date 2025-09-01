@@ -42,7 +42,19 @@ export const useUserRole = () => {
     fetchUserRole();
   }, [user]);
 
-  const isDeveloper = role === 'developer' || role === 'admin';
+  const isDeveloper = role === 'developer';
+  const isAdmin = role === 'admin';
+  const isModerator = role === 'moderator';
+  const canManageUsers = isDeveloper || isAdmin;
+  const canModifyData = isDeveloper || isAdmin || isModerator;
   
-  return { role, loading, isDeveloper };
+  return { 
+    role, 
+    loading, 
+    isDeveloper, 
+    isAdmin, 
+    isModerator, 
+    canManageUsers, 
+    canModifyData 
+  };
 };
