@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -28,14 +28,7 @@ const Auth = () => {
   console.log('Auth page - Current URL:', window.location.href);
   console.log('Auth page - Redirect URL from params:', redirectUrl);
 
-  useEffect(() => {
-    if (user && session) {
-      console.log('useEffect triggered - user:', user.email, 'session exists:', !!session);
-      handleRedirectAfterAuth();
-    }
-  }, [user, session, redirectUrl]);
-
-  const handleRedirectAfterAuth = async () => {
+  const handleRedirectAfterAuth = useCallback(async () => {
     console.log('handleRedirectAfterAuth called with redirectUrl:', redirectUrl);
     
     if (redirectUrl) {
@@ -91,7 +84,14 @@ const Auth = () => {
     
     // Default redirect to dashboard
     navigate('/');
-  };
+  }, [redirectUrl, user, session, navigate, toast]);
+
+  useEffect(() => {
+    if (user && session) {
+      console.log('useEffect triggered - user:', user.email, 'session exists:', !!session);
+      handleRedirectAfterAuth();
+    }
+  }, [user, session, handleRedirectAfterAuth]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
