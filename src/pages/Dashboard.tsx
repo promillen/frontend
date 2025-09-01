@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTestRole } from '@/contexts/TestRoleContext';
@@ -26,6 +26,23 @@ const Dashboard = () => {
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [activeTimeRange, setActiveTimeRange] = useState('none');
   const [openMenu, setOpenMenu] = useState<'tile' | 'filter' | 'time' | null>(null);
+
+  // Close dropdown when clicking outside or when view changes
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenMenu(null);
+    };
+    
+    if (openMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openMenu]);
+
+  // Close dropdown when view changes  
+  useEffect(() => {
+    setOpenMenu(null);
+  }, [activeView]);
 
   if (authLoading || roleLoading) {
     return (
@@ -65,48 +82,54 @@ const Dashboard = () => {
               {/* Map Controls - only show for map view */}
               {activeView === 'map' && (
                 <>
-                  <MapTileSelector
-                    activeLayer={activeTileLayer}
-                    onLayerChange={setActiveTileLayer}
-                    isOpen={openMenu === 'tile'}
-                    onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
-                  />
-                  <DeviceFilter
-                    selectedDevices={selectedDevices}
-                    onDeviceToggle={(deviceId) => {
-                      setSelectedDevices(prev => 
-                        prev.includes(deviceId) 
-                          ? prev.filter(id => id !== deviceId)
-                          : [...prev, deviceId]
-                      );
-                    }}
-                    onSelectAll={() => {
-                      // Fetch all devices and select them
-                      const fetchAndSelectAll = async () => {
-                        try {
-                          const { data } = await supabase
-                            .from('device_config')
-                            .select('devid');
-                          if (data) {
-                            const allDeviceIds = data.map(d => d.devid);
-                            setSelectedDevices(allDeviceIds);
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <MapTileSelector
+                      activeLayer={activeTileLayer}
+                      onLayerChange={setActiveTileLayer}
+                      isOpen={openMenu === 'tile'}
+                      onToggle={() => setOpenMenu(openMenu === 'tile' ? null : 'tile')}
+                    />
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DeviceFilter
+                      selectedDevices={selectedDevices}
+                      onDeviceToggle={(deviceId) => {
+                        setSelectedDevices(prev => 
+                          prev.includes(deviceId) 
+                            ? prev.filter(id => id !== deviceId)
+                            : [...prev, deviceId]
+                        );
+                      }}
+                      onSelectAll={() => {
+                        // Fetch all devices and select them
+                        const fetchAndSelectAll = async () => {
+                          try {
+                            const { data } = await supabase
+                              .from('device_config')
+                              .select('devid');
+                            if (data) {
+                              const allDeviceIds = data.map(d => d.devid);
+                              setSelectedDevices(allDeviceIds);
+                            }
+                          } catch (error) {
+                            console.error('Error fetching devices:', error);
                           }
-                        } catch (error) {
-                          console.error('Error fetching devices:', error);
-                        }
-                      };
-                      fetchAndSelectAll();
-                    }}
-                    onSelectNone={() => setSelectedDevices([])}
-                    isOpen={openMenu === 'filter'}
-                    onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
-                  />
-                  <TimeRangeSelector
-                    activeRange={activeTimeRange}
-                    onRangeChange={setActiveTimeRange}
-                    isOpen={openMenu === 'time'}
-                    onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
-                  />
+                        };
+                        fetchAndSelectAll();
+                      }}
+                      onSelectNone={() => setSelectedDevices([])}
+                      isOpen={openMenu === 'filter'}
+                      onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
+                    />
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <TimeRangeSelector
+                      activeRange={activeTimeRange}
+                      onRangeChange={setActiveTimeRange}
+                      isOpen={openMenu === 'time'}
+                      onToggle={() => setOpenMenu(openMenu === 'time' ? null : 'time')}
+                    />
+                  </div>
                 </>
               )}
             </div>
