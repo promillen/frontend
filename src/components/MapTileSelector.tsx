@@ -56,9 +56,9 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
       {!isOpen ? (
         <Button
           onClick={onToggle}
-          variant="secondary"
+          variant="outline"
           size="sm"
-          className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+          className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
         >
           <Map className="h-4 w-4 mr-2" />
           <span className="text-sm">Map Style</span>
@@ -67,14 +67,14 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
         <>
           <Button
             onClick={onToggle}
-            variant="secondary"
+            variant="outline"
             size="sm"
-            className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+            className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
           >
             <Map className="h-4 w-4 mr-2" />
             <span className="text-sm">Map Style</span>
           </Button>
-          <Card className="absolute top-10 right-0 z-[9999] bg-background border shadow-lg min-w-[200px]">
+          <Card className="absolute top-10 right-0 z-[99999] bg-background border shadow-xl min-w-[200px]">
             <CardContent className="p-2">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium">Map Style</span>

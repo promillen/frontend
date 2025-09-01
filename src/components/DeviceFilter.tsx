@@ -59,9 +59,9 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
       {!isOpen ? (
         <Button
           onClick={onToggle}
-          variant="secondary"
+          variant="outline"
           size="sm"
-          className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+          className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
         >
           <Filter className="h-4 w-4 mr-2" />
           <span className="text-sm">Filter Devices</span>
@@ -70,14 +70,14 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
         <>
           <Button
             onClick={onToggle}
-            variant="secondary"
+            variant="outline"
             size="sm"
-            className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+            className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
           >
             <Filter className="h-4 w-4 mr-2" />
             <span className="text-sm">Filter Devices</span>
           </Button>
-          <Card className="absolute top-10 right-0 z-[9999] w-80 bg-background border shadow-lg">
+          <Card className="absolute top-10 right-0 z-[99999] w-80 bg-background border shadow-xl">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">Filter Devices</CardTitle>
