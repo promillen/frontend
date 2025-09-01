@@ -13,7 +13,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
 import LoadingSkeleton from './LoadingSkeleton';
 import ErrorBoundary from './ErrorBoundary';
-import { useLayout } from '@/contexts/LayoutContext';
 
 interface DeviceConfig {
   devid: string;
@@ -52,7 +51,6 @@ const DeviceList = () => {
   });
   const { toast } = useToast();
   const { role } = useUserRole();
-  const { layout } = useLayout();
 
   const fetchDevices = async () => {
     try {
@@ -294,7 +292,7 @@ const DeviceList = () => {
               Refresh
             </Button>
             {(role === 'admin' || role === 'moderator') && (
-              <Button size="sm" variant={layout === 'modern' ? 'default' : 'outline'}>
+              <Button size="sm" variant="default">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Device
               </Button>
@@ -312,145 +310,10 @@ const DeviceList = () => {
         {filteredDevices.map((device) => {
           const location = deviceLocations[device.devid];
           
-          if (layout === 'modern') {
-            // Enhanced modern layout with glass morphism and gradients
-            return (
-              <Card key={device.devid} className="group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1">
-                <CardHeader className="relative">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {editingDevice === device.devid ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="text-lg font-semibold"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveEdit();
-                              if (e.key === 'Escape') handleCancelEdit();
-                            }}
-                            autoFocus
-                          />
-                          <Button size="sm" onClick={handleSaveEdit} className="bg-green-500 hover:bg-green-600">
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-lg">
-                            {device.name || device.devid}
-                          </CardTitle>
-                          {(role === 'admin' || role === 'moderator') && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={() => handleEditClick(device)}
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                      <CardDescription className="font-mono text-xs">ID: {device.devid}</CardDescription>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      {getStatusBadge(device.devid)}
-                      {device.battery_level && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-xs">🔋 Battery</span>
-                          <div className="flex items-center gap-2">
-                            <Battery 
-                              level={device.battery_level} 
-                              size="md"
-                              className={getBatteryColor(device.battery_level)}
-                            />
-                            <span className={`font-medium text-xs ${getBatteryColor(device.battery_level)}`}>
-                              {device.battery_level}%
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="relative space-y-3">
-                  <div className="grid grid-cols-1 gap-3 text-sm">
-                    {role === 'admin' && (
-                      <div className="bg-background/20 backdrop-blur-sm rounded-lg p-3 space-y-1">
-                        <p className="text-muted-foreground"><span className="font-medium text-foreground">HW:</span> {device.hw_version}</p>
-                        <p className="text-muted-foreground"><span className="font-medium text-foreground">SW:</span> {device.sw_version}</p>
-                        {device.iccid && <p className="text-muted-foreground font-mono text-xs"><span className="font-medium text-foreground">ICCID:</span> {device.iccid}</p>}
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">Mode:</span>
-                      {(role === 'admin' || role === 'moderator') ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10">
-                              {device.application_mode || 'Select'}
-                              <ChevronDown className="h-3 w-3 ml-1" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50">
-                            {applicationModes.map((mode) => (
-                              <DropdownMenuItem
-                                key={mode}
-                                onClick={() => updateDeviceMode(device.devid, mode)}
-                                className="hover:bg-primary/10 cursor-pointer capitalize"
-                              >
-                                {mode}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <Badge variant="secondary" className="capitalize bg-background/50 backdrop-blur-sm">
-                          {device.application_mode}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {device.heartbeat_interval && (
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-foreground">Heartbeat:</span>
-                        <span className="text-muted-foreground">{device.heartbeat_interval}s</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {location && location.data && typeof location.data === 'object' && location.data.accuracy && (
-                    <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-foreground">Location Accuracy:</span>
-                        <span className="text-primary font-medium">{parseFloat(location.data.accuracy).toFixed(2)}m</span>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {device.last_seen && (
-                    <div className="border-t border-border/30 pt-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-foreground">Last Seen:</span>
-                        <span className="text-muted-foreground font-mono text-xs">{formatDanishTime(device.last_seen)}</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          }
-          
-          // Classic layout - keep original styling exactly as it was
+          // Enhanced modern layout with glass morphism and gradients
           return (
-            <Card key={device.devid}>
-              <CardHeader>
+            <Card key={device.devid} className="group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="relative">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     {editingDevice === device.devid ? (
@@ -465,7 +328,7 @@ const DeviceList = () => {
                           }}
                           autoFocus
                         />
-                        <Button size="sm" onClick={handleSaveEdit}>
+                        <Button size="sm" onClick={handleSaveEdit} className="bg-green-500 hover:bg-green-600">
                           <Check className="h-4 w-4" />
                         </Button>
                         <Button size="sm" variant="outline" onClick={handleCancelEdit}>
@@ -474,63 +337,70 @@ const DeviceList = () => {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-lg">{device.name || device.devid}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {device.name || device.devid}
+                        </CardTitle>
                         {(role === 'admin' || role === 'moderator') && (
                           <Button 
                             size="sm" 
                             variant="ghost" 
                             onClick={() => handleEditClick(device)}
-                            className="h-6 w-6 p-0"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                           >
                             <Edit2 className="h-3 w-3" />
                           </Button>
                         )}
                       </div>
                     )}
-                    <CardDescription>ID: {device.devid}</CardDescription>
+                    <CardDescription className="font-mono text-xs">ID: {device.devid}</CardDescription>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {getStatusBadge(device.devid)}
                     {device.battery_level && (
-                      <div className="flex items-center gap-1 text-sm">
-                        <Battery 
-                          level={device.battery_level} 
-                          size="sm"
-                          className={getBatteryColor(device.battery_level)}
-                        />
-                        <span className={getBatteryColor(device.battery_level)}>
-                          {device.battery_level}%
-                        </span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-xs">🔋 Battery</span>
+                        <div className="flex items-center gap-2">
+                          <Battery 
+                            level={device.battery_level} 
+                            size="md"
+                            className={getBatteryColor(device.battery_level)}
+                          />
+                          <span className={`font-medium text-xs ${getBatteryColor(device.battery_level)}`}>
+                            {device.battery_level}%
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-sm">
+              
+              <CardContent className="relative space-y-3">
+                <div className="grid grid-cols-1 gap-3 text-sm">
                   {role === 'admin' && (
-                    <>
-                      <p><strong>HW Version:</strong> {device.hw_version}</p>
-                      <p><strong>SW Version:</strong> {device.sw_version}</p>
-                      {device.iccid && <p><strong>ICCID:</strong> {device.iccid}</p>}
-                    </>
+                    <div className="bg-background/20 backdrop-blur-sm rounded-lg p-3 space-y-1">
+                      <p className="text-muted-foreground"><span className="font-medium text-foreground">HW:</span> {device.hw_version}</p>
+                      <p className="text-muted-foreground"><span className="font-medium text-foreground">SW:</span> {device.sw_version}</p>
+                      {device.iccid && <p className="text-muted-foreground font-mono text-xs"><span className="font-medium text-foreground">ICCID:</span> {device.iccid}</p>}
+                    </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <strong>Mode:</strong>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-foreground">Mode:</span>
                     {(role === 'admin' || role === 'moderator') ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-6 px-2 text-sm font-normal">
+                          <Button variant="outline" size="sm" className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10">
                             {device.application_mode || 'Select'}
                             <ChevronDown className="h-3 w-3 ml-1" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-background border shadow-md">
+                        <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50">
                           {applicationModes.map((mode) => (
                             <DropdownMenuItem
                               key={mode}
                               onClick={() => updateDeviceMode(device.devid, mode)}
-                              className="hover:bg-accent cursor-pointer"
+                              className="hover:bg-primary/10 cursor-pointer capitalize"
                             >
                               {mode}
                             </DropdownMenuItem>
@@ -538,23 +408,35 @@ const DeviceList = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     ) : (
-                      <span>{device.application_mode}</span>
+                      <Badge variant="secondary" className="capitalize bg-background/50 backdrop-blur-sm">
+                        {device.application_mode}
+                      </Badge>
                     )}
                   </div>
+                  
                   {device.heartbeat_interval && (
-                    <p><strong>Heartbeat:</strong> {device.heartbeat_interval}s</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">Heartbeat:</span>
+                      <span className="text-muted-foreground">{device.heartbeat_interval}s</span>
+                    </div>
                   )}
                 </div>
                 
                 {location && location.data && typeof location.data === 'object' && location.data.accuracy && (
-                  <div className="text-sm space-y-1 pt-2 border-t">
-                    {location.data.accuracy && <p><strong>Accuracy:</strong> {parseFloat(location.data.accuracy).toFixed(2)}m</p>}
+                  <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-foreground">Location Accuracy:</span>
+                      <span className="text-primary font-medium">{parseFloat(location.data.accuracy).toFixed(2)}m</span>
+                    </div>
                   </div>
                 )}
                 
                 {device.last_seen && (
-                  <div className="text-sm pt-2 border-t">
-                    <p><strong>Last Seen:</strong> {formatDanishTime(device.last_seen)}</p>
+                  <div className="border-t border-border/30 pt-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-foreground">Last Seen:</span>
+                      <span className="text-muted-foreground font-mono text-xs">{formatDanishTime(device.last_seen)}</span>
+                    </div>
                   </div>
                 )}
               </CardContent>
