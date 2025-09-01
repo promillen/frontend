@@ -56,7 +56,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             <Clock className="h-4 w-4 mr-2" />
             <span className="text-sm">{activeRangeLabel}</span>
           </Button>
-          <Card className="fixed top-[56px] right-[340px] z-[99999] bg-background border shadow-xl min-w-[200px]">
+          <Card className="absolute top-12 right-0 z-[999] bg-background border shadow-xl min-w-[200px]">
             <CardContent className="p-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1">

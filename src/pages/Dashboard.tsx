@@ -13,7 +13,6 @@ import DeviceFilter from '@/components/DeviceFilter';
 import TimeRangeSelector from '@/components/TimeRangeSelector';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 
 const Dashboard = () => {
@@ -45,7 +44,7 @@ const Dashboard = () => {
         <AppSidebar activeView={activeView} onViewChange={setActiveView} />
         
         <div className="flex-1 flex flex-col content-fade-in">
-          <header className="h-14 flex items-center justify-between border-b bg-background/95 header-backdrop px-6 shadow-sm">
+          <header className="h-14 flex items-center justify-between border-b bg-background/95 header-backdrop px-6 shadow-sm relative z-50">
             <div className="flex items-center space-x-4">
               <SidebarTrigger className="layout-transition hover:scale-110 active:scale-95" />
               <div className="flex items-center space-x-4">
@@ -113,7 +112,7 @@ const Dashboard = () => {
             </div>
           </header>
           
-          <main className={`flex-1 bg-gradient-to-br from-background to-muted/20 flex flex-col ${activeView === 'map' ? '' : 'p-6'}`}>
+          <main className={`flex-1 bg-gradient-to-br from-background to-muted/20 flex flex-col ${activeView === 'map' ? '' : 'p-6'} relative`}>
             {activeView === 'map' && (
               <div className="flex-1">
                 <MapView 
