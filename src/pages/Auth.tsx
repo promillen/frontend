@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,13 +18,59 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { user, session } = useAuth();
+
+  // Get redirect parameter from URL
+  const searchParams = new URLSearchParams(location.search);
+  const redirectUrl = searchParams.get('redirect');
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && session) {
+      handleRedirectAfterAuth();
     }
-  }, [user, navigate]);
+  }, [user, session, navigate]);
+
+  const handleRedirectAfterAuth = async () => {
+    if (redirectUrl) {
+      try {
+        // Check if user has developer role for docs access
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user!.id)
+          .single();
+
+        if (roleData?.role === 'developer') {
+          // Get JWT token for docs authentication
+          const token = session!.access_token;
+          
+          // Redirect to docs callback with token
+          const callbackUrl = new URL(redirectUrl);
+          callbackUrl.searchParams.set('token', token);
+          
+          window.location.href = callbackUrl.toString();
+          return;
+        } else {
+          toast({
+            title: "Access Denied",
+            description: "Developer access required for documentation.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error checking role:', error);
+        toast({
+          title: "Error",
+          description: "Failed to verify access permissions.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    // Default redirect to dashboard
+    navigate('/');
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

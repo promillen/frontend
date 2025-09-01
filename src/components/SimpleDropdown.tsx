@@ -6,9 +6,10 @@ interface SimpleDropdownProps {
   onClose: () => void;
   trigger: React.ReactNode;
   children: React.ReactNode;
+  align?: 'left' | 'right' | 'center';
 }
 
-const SimpleDropdown: React.FC<SimpleDropdownProps> = ({ isOpen, onClose, trigger, children }) => {
+const SimpleDropdown: React.FC<SimpleDropdownProps> = ({ isOpen, onClose, trigger, children, align = 'left' }) => {
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -24,32 +25,78 @@ const SimpleDropdown: React.FC<SimpleDropdownProps> = ({ isOpen, onClose, trigge
       }
     };
 
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
     }
   }, [isOpen, onClose]);
 
   const getDropdownPosition = () => {
     if (!triggerRef.current) return { top: 0, left: 0 };
     
-    const rect = triggerRef.current.getBoundingClientRect();
-    return {
-      top: rect.bottom + 8,
-      left: rect.left,
-    };
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Approximate dropdown dimensions (can be refined per component)
+    const dropdownWidth = 280;
+    const dropdownHeight = 300;
+    
+    // Calculate top position - always below trigger with consistent gap
+    let top = triggerRect.bottom + 12;
+    
+    // If dropdown would go off bottom of screen, position it above the trigger
+    if (top + dropdownHeight > viewportHeight - 20) {
+      top = triggerRect.top - dropdownHeight - 12;
+    }
+    
+    // Calculate left position based on alignment
+    let left = triggerRect.left;
+    
+    switch (align) {
+      case 'right':
+        // Align right edge of dropdown with right edge of trigger
+        left = triggerRect.right - dropdownWidth;
+        break;
+      case 'center':
+        // Center dropdown under trigger
+        left = triggerRect.left + (triggerRect.width - dropdownWidth) / 2;
+        break;
+      case 'left':
+      default:
+        // Align left edge of dropdown with left edge of trigger
+        left = triggerRect.left;
+        break;
+    }
+    
+    // Ensure dropdown stays within viewport bounds
+    left = Math.max(16, Math.min(left, viewportWidth - dropdownWidth - 16));
+    top = Math.max(16, top);
+    
+    return { top, left };
   };
 
   return (
     <>
-      <div ref={triggerRef}>
+      <div ref={triggerRef} onClick={(e) => e.stopPropagation()}>
         {trigger}
       </div>
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed bg-background border shadow-xl rounded-md p-2 z-[9999]"
+          className="fixed bg-background border shadow-xl rounded-md p-2 z-[99999]"
           style={getDropdownPosition()}
+          onClick={(e) => e.stopPropagation()}
         >
           {children}
         </div>,

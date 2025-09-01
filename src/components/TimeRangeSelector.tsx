@@ -38,6 +38,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     <SimpleDropdown
       isOpen={isOpen}
       onClose={onToggle}
+      align="right"
       trigger={
         <Button
           onClick={onToggle}

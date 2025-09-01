@@ -55,6 +55,7 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
     <SimpleDropdown
       isOpen={isOpen}
       onClose={onToggle}
+      align="left"
       trigger={
         <Button
           onClick={onToggle}

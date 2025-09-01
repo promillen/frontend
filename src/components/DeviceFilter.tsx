@@ -59,6 +59,7 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
     <SimpleDropdown
       isOpen={isOpen}
       onClose={onToggle}
+      align="center"
       trigger={
         <Button
           onClick={onToggle}
