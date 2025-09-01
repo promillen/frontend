@@ -33,52 +33,63 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 }) => {
   const activeRangeLabel = TIME_RANGES.find(r => r.id === activeRange)?.label || 'Live Locations';
 
-  if (!isOpen) {
-    return (
-      <Button
-        onClick={onToggle}
-        variant="secondary"
-        size="sm"
-        className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
-      >
-        <Clock className="h-4 w-4 mr-2" />
-        <span className="text-sm">{activeRangeLabel}</span>
-      </Button>
-    );
-  }
-
   return (
-    <Card className="absolute top-14 right-4 z-[9999] bg-background border shadow-lg">
-      <CardContent className="p-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span className="text-xs font-medium">Movement Tracking</span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
-            <X className="h-3 w-3" />
+    <div className="relative">
+      {!isOpen ? (
+        <Button
+          onClick={onToggle}
+          variant="secondary"
+          size="sm"
+          className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+        >
+          <Clock className="h-4 w-4 mr-2" />
+          <span className="text-sm">{activeRangeLabel}</span>
+        </Button>
+      ) : (
+        <>
+          <Button
+            onClick={onToggle}
+            variant="secondary"
+            size="sm"
+            className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            <span className="text-sm">{activeRangeLabel}</span>
           </Button>
-        </div>
-        <div className="flex flex-col gap-1">
-          {TIME_RANGES.map((range) => (
-            <Button
-              key={range.id}
-              variant={activeRange === range.id ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onRangeChange(range.id)}
-              className="justify-start text-xs h-8"
-            >
-              {range.id === 'none' ? (
-                <Calendar className="h-3 w-3 mr-2" />
-              ) : (
-                <Clock className="h-3 w-3 mr-2" />
-              )}
-              {range.label}
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          <Card className="absolute top-10 right-0 z-[9999] bg-background border shadow-lg min-w-[200px]">
+            <CardContent className="p-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span className="text-xs font-medium">Movement Tracking</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={onToggle}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex flex-col gap-1">
+                {TIME_RANGES.map((range) => (
+                  <Button
+                    key={range.id}
+                    variant={activeRange === range.id ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onRangeChange(range.id)}
+                    className="justify-start text-xs h-8"
+                  >
+                    {range.id === 'none' ? (
+                      <Calendar className="h-3 w-3 mr-2" />
+                    ) : (
+                      <Clock className="h-3 w-3 mr-2" />
+                    )}
+                    {range.label}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   );
 };
 

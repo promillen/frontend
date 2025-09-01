@@ -51,45 +51,56 @@ interface MapTileSelectorProps {
 
 const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerChange, isOpen, onToggle }) => {
 
-  if (!isOpen) {
-    return (
-      <Button
-        onClick={onToggle}
-        variant="secondary"
-        size="sm"
-        className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
-      >
-        <Map className="h-4 w-4 mr-2" />
-        <span className="text-sm">Map Style</span>
-      </Button>
-    );
-  }
-
   return (
-    <Card className="absolute top-14 right-4 z-[9999] bg-background border shadow-lg">
-      <CardContent className="p-2">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium">Map Style</span>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
-            <X className="h-3 w-3" />
+    <div className="relative">
+      {!isOpen ? (
+        <Button
+          onClick={onToggle}
+          variant="secondary"
+          size="sm"
+          className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+        >
+          <Map className="h-4 w-4 mr-2" />
+          <span className="text-sm">Map Style</span>
+        </Button>
+      ) : (
+        <>
+          <Button
+            onClick={onToggle}
+            variant="secondary"
+            size="sm"
+            className="bg-card/95 backdrop-blur-sm hover:bg-card h-8 px-3"
+          >
+            <Map className="h-4 w-4 mr-2" />
+            <span className="text-sm">Map Style</span>
           </Button>
-        </div>
-        <div className="flex flex-col gap-1">
-          {TILE_LAYERS.map((layer) => (
-            <Button
-              key={layer.id}
-              variant={activeLayer === layer.id ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onLayerChange(layer.id)}
-              className="justify-start gap-2 text-xs h-8"
-            >
-              {layer.icon}
-              {layer.name}
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          <Card className="absolute top-10 right-0 z-[9999] bg-background border shadow-lg min-w-[200px]">
+            <CardContent className="p-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium">Map Style</span>
+                <Button variant="ghost" size="sm" onClick={onToggle}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex flex-col gap-1">
+                {TILE_LAYERS.map((layer) => (
+                  <Button
+                    key={layer.id}
+                    variant={activeLayer === layer.id ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onLayerChange(layer.id)}
+                    className="justify-start gap-2 text-xs h-8"
+                  >
+                    {layer.icon}
+                    {layer.name}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   );
 };
 
