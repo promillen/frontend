@@ -24,18 +24,25 @@ const Auth = () => {
   // Get redirect parameter from URL
   const searchParams = new URLSearchParams(location.search);
   const redirectUrl = searchParams.get('redirect');
+  
+  console.log('Auth page - Current URL:', window.location.href);
+  console.log('Auth page - Redirect URL from params:', redirectUrl);
 
   useEffect(() => {
     if (user && session) {
+      console.log('useEffect triggered - user:', user.email, 'session exists:', !!session);
       handleRedirectAfterAuth();
     }
   }, [user, session, redirectUrl]);
 
   const handleRedirectAfterAuth = async () => {
+    console.log('handleRedirectAfterAuth called with redirectUrl:', redirectUrl);
+    
     if (redirectUrl) {
       try {
         // Check if this is a docs.moc-iot.com redirect
         const isDocsRedirect = redirectUrl.includes('docs.moc-iot.com');
+        console.log('Is docs redirect?', isDocsRedirect, 'redirectUrl:', redirectUrl);
         
         if (isDocsRedirect) {
           // Check if user has developer role for docs access
@@ -45,6 +52,8 @@ const Auth = () => {
             .eq('user_id', user!.id)
             .single();
 
+          console.log('Role check result:', { roleData, error });
+
           if (roleData?.role === 'developer' || roleData?.role === 'admin') {
             // Get JWT token for docs authentication
             const token = session!.access_token;
@@ -53,6 +62,7 @@ const Auth = () => {
             const callbackUrl = new URL(redirectUrl);
             callbackUrl.searchParams.set('token', token);
             
+            console.log('About to redirect to docs callback:', callbackUrl.toString());
             window.location.href = callbackUrl.toString();
             return;
           } else {
