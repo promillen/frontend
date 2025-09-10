@@ -60,27 +60,74 @@ serve(async (req) => {
 })
 
 function startMockCoAPMessages(socket: WebSocket, deviceId: string) {
-  // Send periodic mock CoAP messages to simulate device communication
+  // Send periodic mock CoAP messages to simulate real device communication
   const messageTypes = [
-    { type: 'info', message: 'Heartbeat received', raw: '40 01 2a f4 b2 65 6c 6c 6f' },
-    { type: 'info', message: 'GPS location update', raw: '50 02 3b c5 67 70 73 64 61 74 61' },
-    { type: 'info', message: 'Battery status report', raw: '60 03 4c d6 62 61 74 74 65 72 79' },
-    { type: 'warning', message: 'Low battery warning', raw: '70 04 5d e7 77 61 72 6e 69 6e 67' },
-    { type: 'info', message: 'Temperature sensor data', raw: '40 05 6e f8 74 65 6d 70 64 61 74' },
-    { type: 'info', message: 'Motion detected', raw: '50 06 7f 09 6d 6f 74 69 6f 6e 64' },
+    { 
+      type: 'info', 
+      message: `CoAP POST /uplink from ${deviceId}`, 
+      raw: '40 02 5f 4a 62 75 70 6c 69 6e 6b',
+      details: 'Device uplink message received'
+    },
+    { 
+      type: 'info', 
+      message: `Protobuf decoded: heartbeat_interval=300, battery=85%`,
+      raw: '08 ac 02 12 04 10 d5 01',
+      details: 'Device configuration and status update'
+    },
+    { 
+      type: 'info', 
+      message: `Location data: WiFi scan (3 APs), Cell tower info`,
+      raw: '1a 0a 08 01 12 06 aa bb cc dd ee ff',
+      details: 'Location triangulation data received'
+    },
+    { 
+      type: 'info', 
+      message: `Activity report: sleep=240ms, modem=15ms, gnss=0ms`,
+      raw: '22 08 08 f0 01 10 0f 18 00',
+      details: 'Power consumption activity breakdown'
+    },
+    { 
+      type: 'info', 
+      message: `Temperature sensor: 22.5°C, uplink_count=${Math.floor(Math.random() * 1000)}`,
+      raw: '2a 04 08 e1 01 10 16',
+      details: 'Environmental sensor reading'
+    },
+    { 
+      type: 'warning', 
+      message: `Low battery warning: 15% remaining`,
+      raw: '32 02 08 0f',
+      details: 'Device power management alert'
+    },
+    { 
+      type: 'info', 
+      message: `Motion detected: accelerometer triggered`,
+      raw: '3a 06 08 01 11 00 20 40 80',
+      details: 'Movement sensor activation'
+    },
+    { 
+      type: 'error', 
+      message: `CoAP transmission failed, retrying...`,
+      raw: '40 01 60 4e',
+      details: 'Network connectivity issue'
+    }
   ]
 
   let messageIndex = 0
+  let sequenceNumber = 1
   
   const interval = setInterval(() => {
     if (socket.readyState === WebSocket.OPEN) {
       const messageTemplate = messageTypes[messageIndex % messageTypes.length]
       
       const logMessage = {
-        ...messageTemplate,
+        type: messageTemplate.type,
+        message: messageTemplate.message,
+        raw: messageTemplate.raw,
+        details: messageTemplate.details,
         deviceId,
         timestamp: new Date().toISOString(),
-        message: `[CoAP] ${messageTemplate.message} from ${deviceId}`
+        sequence: sequenceNumber++,
+        source: 'CoAP Server'
       }
 
       socket.send(JSON.stringify(logMessage))
@@ -88,7 +135,7 @@ function startMockCoAPMessages(socket: WebSocket, deviceId: string) {
     } else {
       clearInterval(interval)
     }
-  }, 2000 + Math.random() * 3000) // Random interval between 2-5 seconds
+  }, 3000 + Math.random() * 4000) // Random interval between 3-7 seconds for realistic timing
 
   // Store interval ID on socket for cleanup
   ;(socket as any).messageInterval = interval
