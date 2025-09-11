@@ -361,7 +361,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                     const logTypes = [...new Set(groupLogs.map(log => log.type))];
                     
                     return (
-                      <Collapsible key={groupKey} defaultOpen={true} className="space-y-2">
+                      <Collapsible key={groupKey} defaultOpen={false} className="space-y-2 group">
                         <CollapsibleTrigger asChild>
                           <Button 
                             variant="ghost" 
@@ -369,7 +369,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
-                                <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                                <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                                 <span className="font-medium">
                                   {isUplinkGroup ? `Uplink #${uplinkNumber}` : 'System Messages'}
                                 </span>
@@ -390,7 +390,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                             </span>
                           </Button>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-3 ml-4 border-l-2 border-muted pl-4">
+                        <CollapsibleContent className="space-y-3 ml-4 border-l-2 border-muted pl-4 animate-accordion-down data-[state=closed]:animate-accordion-up">
                           {groupLogs.map((log, index) => (
                             <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
                               <div className="flex items-center justify-between">
