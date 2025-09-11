@@ -53,13 +53,22 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     if (!deviceId) return;
 
     try {
-      // Connect to device logs edge function
-      const wsUrl = `wss://cdwtsrzshpotkfbyyyjk.functions.supabase.co/device-logs?deviceId=${deviceId}`;
+      // Connect directly to Fly.io WebSocket (simplified 2-tier architecture)
+      const wsUrl = `wss://flyio-nbiot.fly.dev/ws?deviceId=${encodeURIComponent(deviceId)}`;
       websocketRef.current = new WebSocket(wsUrl);
 
       websocketRef.current.onopen = () => {
         setIsConnected(true);
-        console.log('Connected to device logs');
+        console.log(`Connected to device logs for ${deviceId}`);
+        
+        // Send initial ping to verify connection
+        if (websocketRef.current?.readyState === WebSocket.OPEN) {
+          websocketRef.current.send(JSON.stringify({
+            type: 'ping',
+            deviceId: deviceId,
+            timestamp: new Date().toISOString()
+          }));
+        }
       };
 
       websocketRef.current.onmessage = (event) => {
@@ -69,12 +78,18 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
           const logData = JSON.parse(event.data);
           console.log('Received WebSocket message:', logData); // Debug log
           
+          // Handle pong responses (connection health)
+          if (logData.type === 'pong') {
+            console.log('WebSocket connection healthy - received pong');
+            return;
+          }
+          
           const newLog: LogMessage = {
             id: logData.id || (Date.now().toString() + Math.random().toString(36).substr(2, 9)),
             timestamp: logData.timestamp || new Date().toISOString(),
             deviceId: logData.deviceId || deviceId,
             message: logData.message || 'Unknown message',
-            type: logData.type || 'info',
+            type: logData.type === 'system' ? 'info' : (logData.type || 'info'),
             raw: logData.raw
           };
 
@@ -100,20 +115,32 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
         setIsConnected(false);
       };
 
-      websocketRef.current.onclose = () => {
+      websocketRef.current.onclose = (event) => {
         setIsConnected(false);
-        console.log('Disconnected from device logs');
+        console.log(`Disconnected from device logs (code: ${event.code}, reason: ${event.reason})`);
         
-        // Auto-reconnect after 3 seconds if not manually disconnected
-        if (deviceId && isOpen) {
-          console.log('Attempting to reconnect in 3 seconds...');
+        // Enhanced auto-reconnect with exponential backoff
+        if (deviceId && isOpen && !websocketRef.current?.reconnecting) {
+          const reconnectDelay = Math.min(1000 * Math.pow(2, (websocketRef.current?.reconnectAttempts || 0)), 30000);
+          console.log(`Attempting to reconnect in ${reconnectDelay}ms...`);
+          
           setTimeout(() => {
-            if (deviceId && isOpen && !websocketRef.current) {
+            if (deviceId && isOpen && (!websocketRef.current || websocketRef.current.readyState === WebSocket.CLOSED)) {
+              if (websocketRef.current) {
+                websocketRef.current.reconnectAttempts = (websocketRef.current.reconnectAttempts || 0) + 1;
+              }
               connectWebSocket();
             }
-          }, 3000);
+          }, reconnectDelay);
         }
       };
+      
+      // Reset reconnect attempts on successful connection
+      if (websocketRef.current) {
+        websocketRef.current.reconnectAttempts = 0;
+        websocketRef.current.reconnecting = false;
+      }
+      
     } catch (error) {
       console.error('Error connecting to WebSocket:', error);
     }
@@ -128,26 +155,98 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     setLiveLogs([]);
   };
 
+  const [testButtonStates, setTestButtonStates] = useState<{[key: string]: boolean}>({});
+  const [connectionHealth, setConnectionHealth] = useState<{healthy: boolean, lastCheck: string} | null>(null);
+
+  // Periodic health check
+  useEffect(() => {
+    if (!isConnected || !deviceId) return;
+
+    const healthCheckInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`https://flyio-nbiot.fly.dev/health`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (response.ok) {
+          const healthData = await response.json();
+          setConnectionHealth({
+            healthy: healthData.status === 'healthy',
+            lastCheck: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Health check failed:', error);
+        setConnectionHealth({
+          healthy: false,
+          lastCheck: new Date().toISOString()
+        });
+      }
+    }, 15000); // Check every 15 seconds
+
+    return () => clearInterval(healthCheckInterval);
+  }, [isConnected, deviceId]);
+
   const sendTestMessage = async (msgType: string, count: number = 1) => {
     if (!deviceId) return;
     
+    const buttonKey = `${msgType}-${count}`;
+    setTestButtonStates(prev => ({ ...prev, [buttonKey]: true }));
+    
     try {
+      // First verify WebSocket connection is healthy
+      if (!isConnected) {
+        throw new Error('WebSocket not connected');
+      }
+
       const flyioUrl = `https://flyio-nbiot.fly.dev/test?deviceId=${encodeURIComponent(deviceId)}&type=${msgType}&count=${count}`;
       
       const response = await fetch(flyioUrl, {
         method: 'GET',
         headers: {
           'Accept': 'text/plain'
-        }
+        },
+        timeout: 10000 // 10 second timeout
       });
       
       if (response.ok) {
-        console.log(`Test ${msgType} message(s) sent successfully`);
+        const responseText = await response.text();
+        console.log(`✅ Test ${msgType} message(s) sent successfully: ${responseText}`);
+        
+        // Add visual feedback to live logs
+        setLiveLogs(prev => [...prev, {
+          id: `test-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          deviceId: deviceId,
+          message: `🧪 Sent ${count} test ${msgType} message${count > 1 ? 's' : ''}`,
+          type: 'info'
+        }]);
+        
       } else {
-        console.error(`Failed to send test message: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`❌ Failed to send test message: ${response.status} - ${errorText}`);
+        
+        setLiveLogs(prev => [...prev, {
+          id: `test-error-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          deviceId: deviceId,
+          message: `❌ Test message failed: ${response.status}`,
+          type: 'error'
+        }]);
       }
     } catch (error) {
       console.error('Error sending test message:', error);
+      
+      setLiveLogs(prev => [...prev, {
+        id: `test-error-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        deviceId: deviceId,
+        message: `❌ Test message error: ${error.message}`,
+        type: 'error'
+      }]);
+    } finally {
+      setTestButtonStates(prev => ({ ...prev, [buttonKey]: false }));
     }
   };
 
@@ -346,37 +445,37 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                       variant="default" 
                       size="sm" 
                       onClick={() => sendTestMessage('heartbeat')}
-                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                      disabled={!isConnected}
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50"
+                      disabled={!isConnected || !(connectionHealth?.healthy ?? true) || testButtonStates['heartbeat-1']}
                     >
-                      Test Heartbeat
+                      {testButtonStates['heartbeat-1'] ? 'Sending...' : 'Test Heartbeat'}
                     </Button>
                     <Button 
                       variant="default" 
                       size="sm" 
                       onClick={() => sendTestMessage('activity')}
-                      className="text-xs bg-green-600 hover:bg-green-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                      disabled={!isConnected}
+                      className="text-xs bg-green-600 hover:bg-green-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50"
+                      disabled={!isConnected || !(connectionHealth?.healthy ?? true) || testButtonStates['activity-1']}
                     >
-                      Test Activity
+                      {testButtonStates['activity-1'] ? 'Sending...' : 'Test Activity'}
                     </Button>
                     <Button 
                       variant="default" 
                       size="sm" 
                       onClick={() => sendTestMessage('location')}
-                      className="text-xs bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                      disabled={!isConnected}
+                      className="text-xs bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50"
+                      disabled={!isConnected || !(connectionHealth?.healthy ?? true) || testButtonStates['location-1']}
                     >
-                      Test Location
+                      {testButtonStates['location-1'] ? 'Sending...' : 'Test Location'}
                     </Button>
                     <Button 
                       variant="default" 
                       size="sm" 
                       onClick={() => sendTestMessage('random', 5)}
-                      className="text-xs bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                      disabled={!isConnected}
+                      className="text-xs bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 disabled:opacity-50"
+                      disabled={!isConnected || !(connectionHealth?.healthy ?? true) || testButtonStates['random-5']}
                     >
-                      Test Burst (5x)
+                      {testButtonStates['random-5'] ? 'Sending...' : 'Test Burst (5x)'}
                     </Button>
                   </div>
                 </div>
@@ -392,10 +491,24 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                       Reconnect
                     </Button>
                   )}
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                  <span className="text-sm text-muted-foreground">
-                    {isConnected ? 'Connected' : 'Disconnected'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      isConnected 
+                        ? (connectionHealth?.healthy !== false ? 'bg-green-500 animate-pulse' : 'bg-yellow-500') 
+                        : 'bg-red-500'
+                    }`}></div>
+                    <span className="text-sm text-muted-foreground">
+                      {isConnected 
+                        ? (connectionHealth?.healthy !== false ? 'Connected & Healthy' : 'Connected (Warning)')
+                        : 'Disconnected'
+                      }
+                    </span>
+                    {connectionHealth && (
+                      <span className="text-xs text-muted-foreground">
+                        ({new Date(connectionHealth.lastCheck).toLocaleTimeString()})
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
