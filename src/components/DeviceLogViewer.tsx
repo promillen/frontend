@@ -120,8 +120,14 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     if (!deviceId) return;
     
     try {
-      // Use your actual Fly.io app URL here - replace 'your-app-name' with your real app name
-      const flyioUrl = `https://your-app-name.fly.dev/test?deviceId=${encodeURIComponent(deviceId)}&type=${msgType}&count=${count}`;
+      // TODO: Replace with your actual Fly.io app URL
+      const flyioAppName = prompt('Enter your Fly.io app name (e.g., my-sensor-app):');
+      if (!flyioAppName) {
+        console.log('Test cancelled - no app name provided');
+        return;
+      }
+      
+      const flyioUrl = `https://${flyioAppName}.fly.dev/test?deviceId=${encodeURIComponent(deviceId)}&type=${msgType}&count=${count}`;
       
       const response = await fetch(flyioUrl, {
         method: 'GET',
@@ -145,7 +151,12 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
   };
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString();
+    return new Date(timestamp).toLocaleTimeString('en-GB', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   const getLiveLogTypeColor = (type: string) => {
