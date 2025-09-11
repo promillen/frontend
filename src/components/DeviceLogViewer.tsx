@@ -116,6 +116,30 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     setLiveLogs([]);
   };
 
+  const sendTestMessage = async (msgType: string, count: number = 1) => {
+    if (!deviceId) return;
+    
+    try {
+      // Use your actual Fly.io app URL here - replace 'your-app-name' with your real app name
+      const flyioUrl = `https://your-app-name.fly.dev/test?deviceId=${encodeURIComponent(deviceId)}&type=${msgType}&count=${count}`;
+      
+      const response = await fetch(flyioUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/plain'
+        }
+      });
+      
+      if (response.ok) {
+        console.log(`Test ${msgType} message(s) sent successfully`);
+      } else {
+        console.error(`Failed to send test message: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error sending test message:', error);
+    }
+  };
+
   const clearLiveLogs = () => {
     setLiveLogs([]);
   };
@@ -242,7 +266,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
           </TabsContent>
 
           <TabsContent value="live" className="flex flex-col h-full mt-6">
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-4 flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
@@ -250,15 +274,52 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                 className={isPaused ? "hover:bg-green-500/10" : "hover:bg-yellow-500/10"}
               >
                 {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                {isPaused ? 'Resume Live Logs' : 'Pause Live Logs'}
+                {isPaused ? 'Resume' : 'Pause'}
               </Button>
               <Button variant="outline" size="sm" onClick={clearLiveLogs} className="hover:bg-destructive/10">
                 Clear Logs
               </Button>
+              
+              {/* Test Message Buttons */}
+              <div className="flex gap-1 border-l pl-2 ml-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => sendTestMessage('heartbeat')}
+                  className="text-xs"
+                >
+                  Test Heartbeat
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => sendTestMessage('activity')}
+                  className="text-xs"
+                >
+                  Test Activity
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => sendTestMessage('location')}
+                  className="text-xs"
+                >
+                  Test Location
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => sendTestMessage('random', 5)}
+                  className="text-xs"
+                >
+                  Test Burst (5x)
+                </Button>
+              </div>
+              
               <div className="flex items-center gap-2 ml-auto">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
                 <span className="text-sm text-muted-foreground">
-                  {isConnected ? 'Connected to live stream' : 'Disconnected'}
+                  {isConnected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
             </div>
