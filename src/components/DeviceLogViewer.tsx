@@ -67,11 +67,13 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
 
         try {
           const logData = JSON.parse(event.data);
+          console.log('Received WebSocket message:', logData); // Debug log
+          
           const newLog: LogMessage = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            timestamp: new Date().toISOString(),
+            id: logData.id || (Date.now().toString() + Math.random().toString(36).substr(2, 9)),
+            timestamp: logData.timestamp || new Date().toISOString(),
             deviceId: logData.deviceId || deviceId,
-            message: logData.message || 'Unknown CoAP message',
+            message: logData.message || 'Unknown message',
             type: logData.type || 'info',
             raw: logData.raw
           };
@@ -89,7 +91,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             }
           }, 100);
         } catch (error) {
-          console.error('Error parsing log message:', error);
+          console.error('Error parsing log message:', error, event.data);
         }
       };
 
@@ -352,48 +354,50 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </div>
             </div>
 
-            <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-              <div className="space-y-3">
-                {liveLogs.length === 0 ? (
-                  <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
-                    {isConnected ? 'Waiting for live messages...' : 'Not connected to live stream'}
-                  </div>
-                ) : (
-                  liveLogs.map((log, index) => (
-                    <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Badge variant={getLiveLogTypeColor(log.type)} className="text-xs font-medium">
-                            {log.type.toUpperCase()}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground font-mono">
-                            {formatTimestamp(log.timestamp)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-blue-500/30">
-                        {log.message}
-                      </div>
-                      {log.raw && (
-                        <details className="group">
-                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                            <span className="group-open:rotate-90 transition-transform">▶</span>
-                            Raw Message
-                          </summary>
-                          <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
-                            {log.raw}
-                          </div>
-                        </details>
-                      )}
+            <div className="flex-1 flex flex-col min-h-0">
+              <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
+                <div className="space-y-3">
+                  {liveLogs.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
+                      {isConnected ? 'Waiting for live messages...' : 'Not connected to live stream'}
                     </div>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
+                  ) : (
+                    liveLogs.map((log, index) => (
+                      <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Badge variant={getLiveLogTypeColor(log.type)} className="text-xs font-medium">
+                              {log.type.toUpperCase()}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground font-mono">
+                              {formatTimestamp(log.timestamp)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-blue-500/30">
+                          {log.message}
+                        </div>
+                        {log.raw && (
+                          <details className="group">
+                            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                              <span className="group-open:rotate-90 transition-transform">▶</span>
+                              Raw Message
+                            </summary>
+                            <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
+                              {log.raw}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
 
-            <div className="text-sm text-muted-foreground mt-4 p-3 bg-muted/20 rounded border-t flex justify-between items-center">
-              <span>{liveLogs.length} live messages {isPaused && '(paused)'}</span>
-              <span>Started: {new Date().toLocaleTimeString()}</span>
+              <div className="text-sm text-muted-foreground mt-3 p-3 bg-muted/20 rounded border-t flex justify-between items-center flex-shrink-0">
+                <span>{liveLogs.length} live messages {isPaused && '(paused)'}</span>
+                <span>Started: {new Date().toLocaleTimeString('en-GB', { hour12: false })}</span>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
