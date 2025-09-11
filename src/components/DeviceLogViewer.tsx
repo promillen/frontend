@@ -208,8 +208,8 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="database" className="flex flex-col h-full mt-0 pt-4">
-            <div className="flex gap-2 mb-4">
+          <TabsContent value="database" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col h-full">
+            <div className="flex gap-2 mb-4 pt-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -281,7 +281,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="live" className="flex flex-col h-full overflow-hidden mt-0">
+          <TabsContent value="live" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col h-full overflow-hidden">
             <div className="flex gap-2 mb-3 flex-wrap items-center justify-between border-b pb-3">
               <div className="flex gap-2 flex-wrap">
                 <Button
