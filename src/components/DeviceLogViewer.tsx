@@ -192,7 +192,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
         </CardHeader>
         <CardContent className="pt-4 flex flex-col h-[calc(85vh-80px)]">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'database' | 'live')} className="flex flex-col h-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 mb-0">
             <TabsTrigger value="database" className="flex items-center gap-1">
               <Database className="h-3 w-3" />
               Database Logs
@@ -208,7 +208,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="database" className="flex flex-col h-full mt-6">
+          <TabsContent value="database" className="flex flex-col h-full mt-0 pt-4">
             <div className="flex gap-2 mb-4">
               <Button
                 variant="outline"
