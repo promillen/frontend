@@ -208,8 +208,8 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="database" className="flex flex-col h-full mt-6">
-            <div className="flex gap-2 mb-4">
+          <TabsContent value="database" className="flex flex-col h-full overflow-hidden">
+            <div className="flex gap-2 mt-2 mb-3">
               <Button
                 variant="outline"
                 size="sm"
