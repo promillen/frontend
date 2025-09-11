@@ -281,8 +281,8 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="live" className="flex flex-col h-full overflow-hidden">
-            <div className="flex gap-2 mt-2 mb-3 flex-wrap items-center justify-between border-b pb-3">
+          <TabsContent value="live" className="flex flex-col h-full overflow-hidden mt-0">
+            <div className="flex gap-2 mb-3 flex-wrap items-center justify-between border-b pb-3">
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
