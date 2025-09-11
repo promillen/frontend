@@ -281,62 +281,64 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="live" className="flex flex-col h-full mt-6">
-            <div className="flex gap-2 mb-4 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsPaused(!isPaused)}
-                className={isPaused ? "hover:bg-green-500/10" : "hover:bg-yellow-500/10"}
-              >
-                {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                {isPaused ? 'Resume' : 'Pause'}
-              </Button>
-              <Button variant="outline" size="sm" onClick={clearLiveLogs} className="hover:bg-destructive/10">
-                Clear Logs
-              </Button>
-              
-              {/* Test Message Buttons */}
-              <div className="flex gap-2 border-l pl-3 ml-3">
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={() => sendTestMessage('heartbeat')}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                  disabled={!isConnected}
+          <TabsContent value="live" className="flex flex-col h-full overflow-hidden">
+            <div className="flex gap-2 mb-4 flex-wrap items-center justify-between border-b pb-3">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsPaused(!isPaused)}
+                  className={isPaused ? "hover:bg-green-500/10" : "hover:bg-yellow-500/10"}
                 >
-                  Test Heartbeat
+                  {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                  {isPaused ? 'Resume' : 'Pause'}
                 </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={() => sendTestMessage('activity')}
-                  className="text-xs bg-green-600 hover:bg-green-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                  disabled={!isConnected}
-                >
-                  Test Activity
+                <Button variant="outline" size="sm" onClick={clearLiveLogs} className="hover:bg-destructive/10">
+                  Clear Logs
                 </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={() => sendTestMessage('location')}
-                  className="text-xs bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                  disabled={!isConnected}
-                >
-                  Test Location
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={() => sendTestMessage('random', 5)}
-                  className="text-xs bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                  disabled={!isConnected}
-                >
-                  Test Burst (5x)
-                </Button>
+                
+                {/* Test Message Buttons */}
+                <div className="flex gap-2 border-l pl-3 ml-3">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => sendTestMessage('heartbeat')}
+                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                    disabled={!isConnected}
+                  >
+                    Test Heartbeat
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => sendTestMessage('activity')}
+                    className="text-xs bg-green-600 hover:bg-green-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                    disabled={!isConnected}
+                  >
+                    Test Activity
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => sendTestMessage('location')}
+                    className="text-xs bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                    disabled={!isConnected}
+                  >
+                    Test Location
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => sendTestMessage('random', 5)}
+                    className="text-xs bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                    disabled={!isConnected}
+                  >
+                    Test Burst (5x)
+                  </Button>
+                </div>
               </div>
               
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2">
                 {!isConnected && (
                   <Button 
                     variant="outline" 
@@ -354,9 +356,9 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0">
-              <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-                <div className="space-y-3">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <ScrollArea className="flex-1" ref={scrollRef}>
+                <div className="space-y-3 p-1 pr-4">
                   {liveLogs.length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
                       {isConnected ? 'Waiting for live messages...' : 'Not connected to live stream'}
