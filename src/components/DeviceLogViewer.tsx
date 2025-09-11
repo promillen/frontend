@@ -101,6 +101,16 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
       websocketRef.current.onclose = () => {
         setIsConnected(false);
         console.log('Disconnected from device logs');
+        
+        // Auto-reconnect after 3 seconds if not manually disconnected
+        if (deviceId && isOpen) {
+          console.log('Attempting to reconnect in 3 seconds...');
+          setTimeout(() => {
+            if (deviceId && isOpen && !websocketRef.current) {
+              connectWebSocket();
+            }
+          }, 3000);
+        }
       };
     } catch (error) {
       console.error('Error connecting to WebSocket:', error);
@@ -285,42 +295,56 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </Button>
               
               {/* Test Message Buttons */}
-              <div className="flex gap-1 border-l pl-2 ml-2">
+              <div className="flex gap-2 border-l pl-3 ml-3">
                 <Button 
-                  variant="secondary" 
+                  variant="default" 
                   size="sm" 
                   onClick={() => sendTestMessage('heartbeat')}
-                  className="text-xs"
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                  disabled={!isConnected}
                 >
                   Test Heartbeat
                 </Button>
                 <Button 
-                  variant="secondary" 
+                  variant="default" 
                   size="sm" 
                   onClick={() => sendTestMessage('activity')}
-                  className="text-xs"
+                  className="text-xs bg-green-600 hover:bg-green-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                  disabled={!isConnected}
                 >
                   Test Activity
                 </Button>
                 <Button 
-                  variant="secondary" 
+                  variant="default" 
                   size="sm" 
                   onClick={() => sendTestMessage('location')}
-                  className="text-xs"
+                  className="text-xs bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                  disabled={!isConnected}
                 >
                   Test Location
                 </Button>
                 <Button 
-                  variant="secondary" 
+                  variant="default" 
                   size="sm" 
                   onClick={() => sendTestMessage('random', 5)}
-                  className="text-xs"
+                  className="text-xs bg-orange-600 hover:bg-orange-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                  disabled={!isConnected}
                 >
                   Test Burst (5x)
                 </Button>
               </div>
               
               <div className="flex items-center gap-2 ml-auto">
+                {!isConnected && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={connectWebSocket}
+                    className="text-xs hover:bg-green-50 hover:border-green-300"
+                  >
+                    Reconnect
+                  </Button>
+                )}
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
                 <span className="text-sm text-muted-foreground">
                   {isConnected ? 'Connected' : 'Disconnected'}
