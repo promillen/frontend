@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Activity, Pause, Play, Database, RefreshCw } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { X, Activity, Pause, Play, Database, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useDeviceLogs } from '@/hooks/useDeviceLogs';
 
@@ -256,6 +257,28 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     });
   };
 
+  const groupLogsByUplink = (logs: any[]) => {
+    const groups = new Map<string, any[]>();
+    
+    logs.forEach(log => {
+      const key = log.uplink_count ? `uplink_${log.uplink_count}` : 'no_uplink';
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(log);
+    });
+    
+    // Sort groups by most recent first
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => {
+        if (a === 'no_uplink') return 1;
+        if (b === 'no_uplink') return -1;
+        const aNum = parseInt(a.split('_')[1]);
+        const bNum = parseInt(b.split('_')[1]);
+        return bNum - aNum;
+      });
+  };
+
   const getLiveLogTypeColor = (type: string) => {
     switch (type) {
       case 'error': return 'destructive';
@@ -331,39 +354,75 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                     No database logs found for this device
                   </div>
                 ) : (
-                  databaseLogs.map((log, index) => (
-                    <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Badge variant={getLogTypeColor(log.type)} className="text-xs font-medium">
-                            {log.type.toUpperCase()}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground font-mono">
-                            {formatTimestamp(log.timestamp)}
-                          </span>
-                        </div>
-                        {log.uplink_count && (
-                          <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                            Uplink #{log.uplink_count}
-                          </span>
-                        )}
-                      </div>
-                      <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-primary/30">
-                        {log.message}
-                      </div>
-                      {log.data && (
-                        <details className="group">
-                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                            <span className="group-open:rotate-90 transition-transform">▶</span>
-                            Raw Data
-                          </summary>
-                          <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
-                            <pre>{JSON.stringify(log.data, null, 2)}</pre>
-                          </div>
-                        </details>
-                      )}
-                    </div>
-                  ))
+                  groupLogsByUplink(databaseLogs).map(([groupKey, groupLogs]) => {
+                    const isUplinkGroup = groupKey !== 'no_uplink';
+                    const uplinkNumber = isUplinkGroup ? parseInt(groupKey.split('_')[1]) : null;
+                    const latestTimestamp = groupLogs[0]?.timestamp;
+                    const logTypes = [...new Set(groupLogs.map(log => log.type))];
+                    
+                    return (
+                      <Collapsible key={groupKey} defaultOpen={true} className="space-y-2">
+                        <CollapsibleTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-between p-4 h-auto bg-muted/20 hover:bg-muted/30 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
+                                <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                                <span className="font-medium">
+                                  {isUplinkGroup ? `Uplink #${uplinkNumber}` : 'System Messages'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {groupLogs.length} entries
+                                </Badge>
+                                {logTypes.map(type => (
+                                  <Badge key={type} variant={getLogTypeColor(type)} className="text-xs">
+                                    {type.toUpperCase()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <span className="text-sm text-muted-foreground font-mono">
+                              {latestTimestamp && formatTimestamp(latestTimestamp)}
+                            </span>
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-3 ml-4 border-l-2 border-muted pl-4">
+                          {groupLogs.map((log, index) => (
+                            <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Badge variant={getLogTypeColor(log.type)} className="text-xs font-medium">
+                                    {log.type.toUpperCase()}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground font-mono">
+                                    {formatTimestamp(log.timestamp)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-primary/30">
+                                {log.message}
+                              </div>
+                              {log.data && (
+                                <details className="group">
+                                  <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                                    <span className="group-open:rotate-90 transition-transform">▶</span>
+                                    Raw Data
+                                  </summary>
+                                  <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
+                                    <pre>{JSON.stringify(log.data, null, 2)}</pre>
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })
                 )}
               </div>
             </ScrollArea>
