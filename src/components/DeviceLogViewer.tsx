@@ -120,14 +120,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     if (!deviceId) return;
     
     try {
-      // TODO: Replace with your actual Fly.io app URL
-      const flyioAppName = prompt('Enter your Fly.io app name (e.g., my-sensor-app):');
-      if (!flyioAppName) {
-        console.log('Test cancelled - no app name provided');
-        return;
-      }
-      
-      const flyioUrl = `https://${flyioAppName}.fly.dev/test?deviceId=${encodeURIComponent(deviceId)}&type=${msgType}&count=${count}`;
+      const flyioUrl = `https://flyio-nbiot.fly.dev/test?deviceId=${encodeURIComponent(deviceId)}&type=${msgType}&count=${count}`;
       
       const response = await fetch(flyioUrl, {
         method: 'GET',
