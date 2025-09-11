@@ -120,26 +120,20 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
         console.log(`Disconnected from device logs (code: ${event.code}, reason: ${event.reason})`);
         
         // Enhanced auto-reconnect with exponential backoff
-        if (deviceId && isOpen && !websocketRef.current?.reconnecting) {
-          const reconnectDelay = Math.min(1000 * Math.pow(2, (websocketRef.current?.reconnectAttempts || 0)), 30000);
+        if (deviceId && isOpen) {
+          const reconnectDelay = Math.min(1000 * Math.pow(2, 0), 30000);
           console.log(`Attempting to reconnect in ${reconnectDelay}ms...`);
           
           setTimeout(() => {
             if (deviceId && isOpen && (!websocketRef.current || websocketRef.current.readyState === WebSocket.CLOSED)) {
-              if (websocketRef.current) {
-                websocketRef.current.reconnectAttempts = (websocketRef.current.reconnectAttempts || 0) + 1;
-              }
               connectWebSocket();
             }
           }, reconnectDelay);
         }
       };
       
-      // Reset reconnect attempts on successful connection
-      if (websocketRef.current) {
-        websocketRef.current.reconnectAttempts = 0;
-        websocketRef.current.reconnecting = false;
-      }
+      // Connection successful
+      console.log('WebSocket connection established');
       
     } catch (error) {
       console.error('Error connecting to WebSocket:', error);
@@ -206,8 +200,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
         method: 'GET',
         headers: {
           'Accept': 'text/plain'
-        },
-        timeout: 10000 // 10 second timeout
+        }
       });
       
       if (response.ok) {
@@ -277,7 +270,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card/95 backdrop-blur-sm shadow-2xl border-2">
+      <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card backdrop-blur-sm shadow-2xl border-2">
         <CardHeader className="pb-3 border-b">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -321,7 +314,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </Button>
             </div>
 
-            <ScrollArea className="flex-1 pr-4">
+            <ScrollArea className="flex-1 pr-4 pb-4">
               <div className="space-y-4">
                 {loading ? (
                   <div className="text-sm text-muted-foreground text-center py-8">
@@ -375,8 +368,8 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </div>
             </ScrollArea>
 
-            <div className="text-sm text-muted-foreground mt-4 p-3 bg-muted/20 rounded border-t">
-              {databaseLogs.length} database entries • Last updated: {new Date().toLocaleTimeString()}
+            <div className="text-sm text-muted-foreground p-3 bg-muted/20 rounded border-t flex-shrink-0">
+              {databaseLogs.length} database entries • Last updated: {new Date().toLocaleTimeString('en-GB', { hour12: false })}
             </div>
           </TabsContent>
 
