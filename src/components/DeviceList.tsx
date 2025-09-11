@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown } from 'lucide-react';
+import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown, Activity } from 'lucide-react';
 import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
 import LoadingSkeleton from './LoadingSkeleton';
 import ErrorBoundary from './ErrorBoundary';
+import DeviceLogViewer from './DeviceLogViewer';
 
 interface DeviceConfig {
   devid: string;
@@ -49,8 +50,10 @@ const DeviceList = () => {
     batteryRange: [0, 100],
     dateRange: {},
   });
+  const [selectedDeviceForLogs, setSelectedDeviceForLogs] = useState<string | null>(null);
+  const [isLogViewerOpen, setIsLogViewerOpen] = useState(false);
   const { toast } = useToast();
-  const { role } = useUserRole();
+  const { role, canModifyData } = useUserRole();
 
   const fetchDevices = async () => {
     try {
@@ -431,14 +434,31 @@ const DeviceList = () => {
                   </div>
                 )}
                 
-                {device.last_seen && (
-                  <div className="border-t border-border/30 pt-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-foreground">Last Seen:</span>
-                      <span className="text-muted-foreground font-mono text-xs">{formatDanishTime(device.last_seen)}</span>
-                    </div>
-                  </div>
-                )}
+                 {device.last_seen && (
+                   <div className="border-t border-border/30 pt-3">
+                     <div className="flex items-center justify-between text-sm">
+                       <span className="font-medium text-foreground">Last Seen:</span>
+                       <span className="text-muted-foreground font-mono text-xs">{formatDanishTime(device.last_seen)}</span>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {canModifyData && (
+                   <div className="border-t border-border/30 pt-3">
+                     <Button 
+                       size="sm" 
+                       variant="outline" 
+                       onClick={() => {
+                         setSelectedDeviceForLogs(device.devid);
+                         setIsLogViewerOpen(true);
+                       }}
+                       className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
+                     >
+                       <Activity className="h-4 w-4 mr-2" />
+                       View Device Logs
+                     </Button>
+                   </div>
+                 )}
               </CardContent>
             </Card>
           );
@@ -451,11 +471,23 @@ const DeviceList = () => {
         </div>
       )}
 
-      {devices.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No devices found. Add your first device to get started.</p>
-        </div>
-      )}
+       {devices.length === 0 && (
+         <div className="text-center py-8">
+           <p className="text-gray-500">No devices found. Add your first device to get started.</p>
+         </div>
+       )}
+       
+       {/* Device Log Viewer */}
+       {canModifyData && (
+         <DeviceLogViewer
+           deviceId={selectedDeviceForLogs}
+           isOpen={isLogViewerOpen}
+           onClose={() => {
+             setIsLogViewerOpen(false);
+             setSelectedDeviceForLogs(null);
+           }}
+         />
+       )}
       </div>
     </ErrorBoundary>
   );

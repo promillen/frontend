@@ -137,19 +137,20 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
   }
 
   return (
-    <Card className="absolute top-20 right-4 z-[1000] w-[500px] h-[600px] bg-card/95 backdrop-blur-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Device Logs - {deviceId}
-          </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 flex flex-col h-[500px]">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card/95 backdrop-blur-sm shadow-2xl border-2">
+        <CardHeader className="pb-3 border-b">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Device Logs - {deviceId}
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-destructive/10">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 flex flex-col h-[calc(85vh-80px)]">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'database' | 'live')} className="flex flex-col h-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="database" className="flex items-center gap-1">
@@ -167,51 +168,67 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="database" className="flex flex-col h-full mt-4">
-            <div className="flex gap-2 mb-3">
+          <TabsContent value="database" className="flex flex-col h-full mt-6">
+            <div className="flex gap-2 mb-4">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={refetch}
                 disabled={loading}
+                className="hover:bg-primary/10"
               >
-                <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh Database Logs
               </Button>
             </div>
 
-            <ScrollArea className="flex-1">
-              <div className="space-y-2">
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-4">
                 {loading ? (
-                  <div className="text-xs text-muted-foreground text-center py-4">
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
                     Loading database logs...
                   </div>
                 ) : error ? (
-                  <div className="text-xs text-destructive text-center py-4">
-                    Error: {error}
+                  <div className="text-sm text-destructive text-center py-8 bg-destructive/5 rounded-lg border border-destructive/20">
+                    <div className="font-semibold mb-1">Error loading logs</div>
+                    <div>{error}</div>
                   </div>
                 ) : databaseLogs.length === 0 ? (
-                  <div className="text-xs text-muted-foreground text-center py-4">
+                  <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
                     No database logs found for this device
                   </div>
                 ) : (
-                  databaseLogs.map((log) => (
-                    <div key={log.id} className="text-xs space-y-1">
+                  databaseLogs.map((log, index) => (
+                    <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          {formatTimestamp(log.timestamp)}
-                        </span>
-                        <Badge variant={getLogTypeColor(log.type)} className="text-xs">
-                          {log.type}
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                          <Badge variant={getLogTypeColor(log.type)} className="text-xs font-medium">
+                            {log.type.toUpperCase()}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground font-mono">
+                            {formatTimestamp(log.timestamp)}
+                          </span>
+                        </div>
+                        {log.uplink_count && (
+                          <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                            Uplink #{log.uplink_count}
+                          </span>
+                        )}
                       </div>
-                      <div className="font-mono text-xs bg-muted/50 p-2 rounded">
+                      <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-primary/30">
                         {log.message}
                       </div>
                       {log.data && (
-                        <div className="font-mono text-xs text-muted-foreground bg-muted/30 p-1 rounded">
-                          Data: {JSON.stringify(log.data, null, 1)}
-                        </div>
+                        <details className="group">
+                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                            <span className="group-open:rotate-90 transition-transform">▶</span>
+                            Raw Data
+                          </summary>
+                          <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
+                            <pre>{JSON.stringify(log.data, null, 2)}</pre>
+                          </div>
+                        </details>
                       )}
                     </div>
                   ))
@@ -219,50 +236,65 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </div>
             </ScrollArea>
 
-            <div className="text-xs text-muted-foreground mt-2">
-              {databaseLogs.length} database entries
+            <div className="text-sm text-muted-foreground mt-4 p-3 bg-muted/20 rounded border-t">
+              {databaseLogs.length} database entries • Last updated: {new Date().toLocaleTimeString()}
             </div>
           </TabsContent>
 
-          <TabsContent value="live" className="flex flex-col h-full mt-4">
-            <div className="flex gap-2 mb-3">
+          <TabsContent value="live" className="flex flex-col h-full mt-6">
+            <div className="flex gap-2 mb-4">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsPaused(!isPaused)}
+                className={isPaused ? "hover:bg-green-500/10" : "hover:bg-yellow-500/10"}
               >
-                {isPaused ? <Play className="h-3 w-3 mr-1" /> : <Pause className="h-3 w-3 mr-1" />}
-                {isPaused ? 'Resume' : 'Pause'}
+                {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                {isPaused ? 'Resume Live Logs' : 'Pause Live Logs'}
               </Button>
-              <Button variant="outline" size="sm" onClick={clearLiveLogs}>
-                Clear
+              <Button variant="outline" size="sm" onClick={clearLiveLogs} className="hover:bg-destructive/10">
+                Clear Logs
               </Button>
+              <div className="flex items-center gap-2 ml-auto">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                <span className="text-sm text-muted-foreground">
+                  {isConnected ? 'Connected to live stream' : 'Disconnected'}
+                </span>
+              </div>
             </div>
 
-            <ScrollArea className="flex-1" ref={scrollRef}>
-              <div className="space-y-2">
+            <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
+              <div className="space-y-3">
                 {liveLogs.length === 0 ? (
-                  <div className="text-xs text-muted-foreground text-center py-4">
-                    {isConnected ? 'Waiting for messages...' : 'Not connected'}
+                  <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
+                    {isConnected ? 'Waiting for live messages...' : 'Not connected to live stream'}
                   </div>
                 ) : (
-                  liveLogs.map((log) => (
-                    <div key={log.id} className="text-xs space-y-1">
+                  liveLogs.map((log, index) => (
+                    <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          {formatTimestamp(log.timestamp)}
-                        </span>
-                        <Badge variant={getLiveLogTypeColor(log.type)} className="text-xs">
-                          {log.type}
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                          <Badge variant={getLiveLogTypeColor(log.type)} className="text-xs font-medium">
+                            {log.type.toUpperCase()}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground font-mono">
+                            {formatTimestamp(log.timestamp)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="font-mono text-xs bg-muted/50 p-2 rounded">
+                      <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-blue-500/30">
                         {log.message}
                       </div>
                       {log.raw && (
-                        <div className="font-mono text-xs text-muted-foreground bg-muted/30 p-1 rounded">
-                          Raw: {log.raw}
-                        </div>
+                        <details className="group">
+                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                            <span className="group-open:rotate-90 transition-transform">▶</span>
+                            Raw Message
+                          </summary>
+                          <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
+                            {log.raw}
+                          </div>
+                        </details>
                       )}
                     </div>
                   ))
@@ -270,13 +302,15 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
               </div>
             </ScrollArea>
 
-            <div className="text-xs text-muted-foreground mt-2">
-              {liveLogs.length} messages {isPaused && '(paused)'}
+            <div className="text-sm text-muted-foreground mt-4 p-3 bg-muted/20 rounded border-t flex justify-between items-center">
+              <span>{liveLogs.length} live messages {isPaused && '(paused)'}</span>
+              <span>Started: {new Date().toLocaleTimeString()}</span>
             </div>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
