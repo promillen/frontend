@@ -67,7 +67,7 @@ const MapView = ({
   const activeTimeRange = externalControls ? externalActiveTimeRange! : internalActiveTimeRange;
   
   const { toast } = useToast();
-  const { role: userRole } = useUserRole();
+  const { role: userRole, canModifyData } = useUserRole();
 
   useEffect(() => {
     if (!mapRef.current || map.current) return;
@@ -296,7 +296,7 @@ const MapView = ({
             <p><strong>HW Version:</strong> ${location.device_config.hw_version}</p>
             <p><strong>SW Version:</strong> ${location.device_config.sw_version}</p>
           ` : ''}
-          ${userRole === 'admin' ? `
+          ${canModifyData ? `
             <div class="mt-2">
               <button onclick="window.showDeviceLogs('${location.devid}')" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">
                 View Live Logs
@@ -424,8 +424,8 @@ const MapView = ({
         </>
       )}
 
-      {/* Admin Live Logs */}
-      {userRole === 'admin' && (
+      {/* Device Logs for Developers, Admins, and Moderators */}
+      {canModifyData && (
         <DeviceLogViewer
           deviceId={selectedDeviceForLogs}
           isOpen={isLogViewerOpen}
