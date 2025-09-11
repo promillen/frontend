@@ -5,6 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Get environment variables
+const FLYIO_WS_URL = Deno.env.get('FLYIO_WS_URL') || 'wss://flyio-nbiot.fly.dev/ws'
+const FLYIO_WS_TOKEN = Deno.env.get('FLYIO_WS_TOKEN')
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -31,118 +35,123 @@ serve(async (req) => {
     })
   }
 
+  // Check if we have the required token for Fly.io connection
+  if (!FLYIO_WS_TOKEN) {
+    console.error('FLYIO_WS_TOKEN not configured')
+    return new Response("Server configuration error", { 
+      status: 500,
+      headers: corsHeaders 
+    })
+  }
+
   const { socket, response } = Deno.upgradeWebSocket(req)
+  let flyioSocket: WebSocket | null = null
 
-  socket.onopen = () => {
-    console.log(`WebSocket connection opened for device: ${deviceId}`)
+  socket.onopen = async () => {
+    console.log(`Frontend WebSocket connection opened for device: ${deviceId}`)
     
-    // Send initial connection message
-    socket.send(JSON.stringify({
-      type: 'connection',
-      message: `Connected to live logs for device ${deviceId}`,
-      deviceId,
-      timestamp: new Date().toISOString()
-    }))
+    try {
+      // Connect to Fly.io WebSocket server
+      const flyioUrl = `${FLYIO_WS_URL}?deviceId=${encodeURIComponent(deviceId)}&token=${encodeURIComponent(FLYIO_WS_TOKEN)}`
+      console.log(`Connecting to Fly.io WebSocket: ${FLYIO_WS_URL}`)
+      
+      flyioSocket = new WebSocket(flyioUrl)
+      
+      flyioSocket.onopen = () => {
+        console.log(`Connected to Fly.io WebSocket for device: ${deviceId}`)
+        
+        // Send initial connection confirmation to frontend
+        socket.send(JSON.stringify({
+          type: 'system',
+          message: `Connected to live logs for device ${deviceId}`,
+          deviceId,
+          timestamp: new Date().toISOString(),
+          source: 'supabase/relay'
+        }))
+      }
+      
+      flyioSocket.onmessage = (event) => {
+        try {
+          // Relay messages from Fly.io to frontend
+          const data = JSON.parse(event.data)
+          console.log(`Relaying message from Fly.io for device ${deviceId}:`, data.type)
+          
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(event.data)
+          }
+        } catch (error) {
+          console.error(`Error parsing Fly.io message for device ${deviceId}:`, error)
+        }
+      }
+      
+      flyioSocket.onerror = (error) => {
+        console.error(`Fly.io WebSocket error for device ${deviceId}:`, error)
+        
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'error',
+            message: 'Connection to device server failed',
+            deviceId,
+            timestamp: new Date().toISOString(),
+            source: 'flyio/error'
+          }))
+        }
+      }
+      
+      flyioSocket.onclose = (event) => {
+        console.log(`Fly.io WebSocket closed for device ${deviceId}:`, event.code, event.reason)
+        
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'system',
+            message: 'Connection to device server closed',
+            deviceId,
+            timestamp: new Date().toISOString(),
+            source: 'flyio/close'
+          }))
+        }
+      }
+      
+    } catch (error) {
+      console.error(`Failed to connect to Fly.io WebSocket for device ${deviceId}:`, error)
+      
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: 'Failed to connect to device server',
+          deviceId,
+          timestamp: new Date().toISOString(),
+          source: 'supabase/error'
+        }))
+      }
+    }
+  }
 
-    // Start sending mock CoAP messages for demo
-    startMockCoAPMessages(socket, deviceId)
+  socket.onmessage = (event) => {
+    try {
+      // Handle messages from frontend (if needed for bidirectional communication)
+      const data = JSON.parse(event.data)
+      console.log(`Received message from frontend for device ${deviceId}:`, data.type)
+      
+      // For now, we only relay from Fly.io to frontend
+      // Future: could relay commands from frontend to Fly.io if needed
+    } catch (error) {
+      console.error(`Error parsing frontend message for device ${deviceId}:`, error)
+    }
   }
 
   socket.onerror = (e) => {
-    console.error(`WebSocket error for device ${deviceId}:`, e)
+    console.error(`Frontend WebSocket error for device ${deviceId}:`, e)
   }
 
   socket.onclose = () => {
-    console.log(`WebSocket connection closed for device: ${deviceId}`)
+    console.log(`Frontend WebSocket connection closed for device: ${deviceId}`)
+    
+    // Close Fly.io connection when frontend disconnects
+    if (flyioSocket && flyioSocket.readyState === WebSocket.OPEN) {
+      flyioSocket.close()
+    }
   }
 
   return response
 })
-
-function startMockCoAPMessages(socket: WebSocket, deviceId: string) {
-  // Send periodic mock CoAP messages to simulate real device communication
-  const messageTypes = [
-    { 
-      type: 'info', 
-      message: `CoAP POST /uplink from ${deviceId}`, 
-      raw: '40 02 5f 4a 62 75 70 6c 69 6e 6b',
-      details: 'Device uplink message received'
-    },
-    { 
-      type: 'info', 
-      message: `Protobuf decoded: heartbeat_interval=300, battery=85%`,
-      raw: '08 ac 02 12 04 10 d5 01',
-      details: 'Device configuration and status update'
-    },
-    { 
-      type: 'info', 
-      message: `Location data: WiFi scan (3 APs), Cell tower info`,
-      raw: '1a 0a 08 01 12 06 aa bb cc dd ee ff',
-      details: 'Location triangulation data received'
-    },
-    { 
-      type: 'info', 
-      message: `Activity report: sleep=240ms, modem=15ms, gnss=0ms`,
-      raw: '22 08 08 f0 01 10 0f 18 00',
-      details: 'Power consumption activity breakdown'
-    },
-    { 
-      type: 'info', 
-      message: `Temperature sensor: 22.5°C, uplink_count=${Math.floor(Math.random() * 1000)}`,
-      raw: '2a 04 08 e1 01 10 16',
-      details: 'Environmental sensor reading'
-    },
-    { 
-      type: 'warning', 
-      message: `Low battery warning: 15% remaining`,
-      raw: '32 02 08 0f',
-      details: 'Device power management alert'
-    },
-    { 
-      type: 'info', 
-      message: `Motion detected: accelerometer triggered`,
-      raw: '3a 06 08 01 11 00 20 40 80',
-      details: 'Movement sensor activation'
-    },
-    { 
-      type: 'error', 
-      message: `CoAP transmission failed, retrying...`,
-      raw: '40 01 60 4e',
-      details: 'Network connectivity issue'
-    }
-  ]
-
-  let messageIndex = 0
-  let sequenceNumber = 1
-  
-  const interval = setInterval(() => {
-    if (socket.readyState === WebSocket.OPEN) {
-      const messageTemplate = messageTypes[messageIndex % messageTypes.length]
-      
-      const logMessage = {
-        type: messageTemplate.type,
-        message: messageTemplate.message,
-        raw: messageTemplate.raw,
-        details: messageTemplate.details,
-        deviceId,
-        timestamp: new Date().toISOString(),
-        sequence: sequenceNumber++,
-        source: 'CoAP Server'
-      }
-
-      socket.send(JSON.stringify(logMessage))
-      messageIndex++
-    } else {
-      clearInterval(interval)
-    }
-  }, 3000 + Math.random() * 4000) // Random interval between 3-7 seconds for realistic timing
-
-  // Store interval ID on socket for cleanup
-  ;(socket as any).messageInterval = interval
-
-  socket.addEventListener('close', () => {
-    if ((socket as any).messageInterval) {
-      clearInterval((socket as any).messageInterval)
-    }
-  })
-}
