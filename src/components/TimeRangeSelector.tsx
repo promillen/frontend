@@ -11,7 +11,7 @@ export interface TimeRange {
 }
 
 export const TIME_RANGES: TimeRange[] = [
-  { id: 'none', label: 'Live Locations', hours: 0 },
+  { id: 'none', label: 'Last Location', hours: 0 },
   { id: '1h', label: 'Last Hour', hours: 1 },
   { id: '6h', label: 'Last 6 Hours', hours: 6 },
   { id: '1d', label: 'Last Day', hours: 24 },
@@ -32,7 +32,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   isOpen,
   onToggle
 }) => {
-  const activeRangeLabel = TIME_RANGES.find(r => r.id === activeRange)?.label || 'Live Locations';
+  const activeRangeLabel = TIME_RANGES.find(r => r.id === activeRange)?.label || 'Last Location';
 
   return (
     <SimpleDropdown
