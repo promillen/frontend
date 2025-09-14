@@ -341,7 +341,7 @@ const MapView = ({
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 16px;
+            margin: 0 16px 16px 16px;
           ">
             <!-- Device Info -->
             <div style="
@@ -445,7 +445,7 @@ const MapView = ({
             <!-- Action Button -->
             <div style="
               border-top: 1px solid #e2e8f0;
-              padding-top: 12px;
+              padding: 12px 16px 0 16px;
               margin-top: 16px;
             ">
               <button 
