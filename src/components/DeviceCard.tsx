@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit2, Check, X, ChevronDown, Activity, Send } from 'lucide-react';
+import { Edit2, Check, X, ChevronDown, Activity, Send, Settings } from 'lucide-react';
 import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useSensorData } from '@/hooks/useSensorData';
@@ -37,8 +37,10 @@ interface DeviceCardProps {
   onNameChange: (name: string) => void;
   onModeUpdate: (devid: string, mode: string) => void;
   onViewLogs: (devid: string) => void;
+  onConfigureDevice: (devid: string) => void;
   getStatusBadge: (deviceId: string) => React.ReactNode;
   getBatteryColor: (level: number) => string;
+  isDeveloper: boolean;
 }
 
 const DeviceCard: React.FC<DeviceCardProps> = ({
@@ -54,8 +56,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   onNameChange,
   onModeUpdate,
   onViewLogs,
+  onConfigureDevice,
   getStatusBadge,
-  getBatteryColor
+  getBatteryColor,
+  isDeveloper
 }) => {
   const { sensorData, loading: sensorLoading } = useSensorData(device.devid, enabledDataTypes);
   const { forwardData, isForwarding } = useDataForwarding();
@@ -291,16 +295,30 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
          )}
          
          {(role === 'admin' || role === 'moderator') && (
-           <div className="border-t border-border/30 pt-3">
+           <div className="border-t border-border/30 pt-3 space-y-2">
+             {/* Device Configuration Button */}
              <Button 
                size="sm" 
                variant="outline" 
-               onClick={() => onViewLogs(device.devid)}
+               onClick={() => onConfigureDevice(device.devid)}
                className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
              >
-               <Activity className="h-4 w-4 mr-2" />
-               View Device Logs
+               <Settings className="h-4 w-4 mr-2" />
+               Configure Device
              </Button>
+             
+             {/* Live Logs Button (Developer only) */}
+             {isDeveloper && (
+               <Button 
+                 size="sm" 
+                 variant="outline" 
+                 onClick={() => onViewLogs(device.devid)}
+                 className="w-full bg-secondary/5 hover:bg-secondary/10 border-secondary/20"
+               >
+                 <Activity className="h-4 w-4 mr-2" />
+                 View Live Logs
+               </Button>
+             )}
            </div>
          )}
       </CardContent>

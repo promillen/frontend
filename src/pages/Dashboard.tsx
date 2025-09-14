@@ -72,7 +72,7 @@ const Dashboard = () => {
                   {activeView === 'map' && 'Device Locations'}
                   {activeView === 'devices' && 'Devices'}
                   {activeView === 'users' && 'User Management'}
-                  {activeView === 'settings' && 'Settings'}
+                  {activeView === 'settings' && 'Data Forwarding'}
                 </span>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>

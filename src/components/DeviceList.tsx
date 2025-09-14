@@ -15,6 +15,8 @@ import LoadingSkeleton from './LoadingSkeleton';
 import ErrorBoundary from './ErrorBoundary';
 import DeviceCard from './DeviceCard';
 import DeviceLogViewer from './DeviceLogViewer';
+import DeviceConfigDialog from './DeviceConfigDialog';
+import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
 import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
 import { useSensorData } from '@/hooks/useSensorData';
 import { useDataForwarding } from '@/hooks/useDataForwarding';
@@ -56,9 +58,12 @@ const DeviceList = () => {
   });
   const [selectedDeviceForLogs, setSelectedDeviceForLogs] = useState<string | null>(null);
   const [isLogViewerOpen, setIsLogViewerOpen] = useState(false);
+  const [selectedDeviceForConfig, setSelectedDeviceForConfig] = useState<string | null>(null);
+  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const { toast } = useToast();
   const { role, canModifyData } = useUserRole();
   const { getEnabledDataTypes } = useDataTypeSelection();
+  const { getDeviceConfig } = useDeviceConfiguration();
 
   const fetchDevices = async () => {
     try {
@@ -315,28 +320,36 @@ const DeviceList = () => {
         />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredDevices.map((device) => (
-          <DeviceCard
-            key={device.devid}
-            device={device}
-            enabledDataTypes={getEnabledDataTypes()}
-            role={role}
-            editingDevice={editingDevice}
-            editName={editName}
-            applicationModes={applicationModes}
-            onEditClick={handleEditClick}
-            onSaveEdit={handleSaveEdit}
-            onCancelEdit={handleCancelEdit}
-            onNameChange={setEditName}
-            onModeUpdate={updateDeviceMode}
-            onViewLogs={(devid) => {
-              setSelectedDeviceForLogs(devid);
-              setIsLogViewerOpen(true);
-            }}
-            getStatusBadge={getStatusBadge}
-            getBatteryColor={getBatteryColor}
-          />
-        ))}
+        {filteredDevices.map((device) => {
+          const deviceConfig = getDeviceConfig(device.devid);
+          return (
+            <DeviceCard
+              key={device.devid}
+              device={device}
+              enabledDataTypes={deviceConfig.enabledDataTypes}
+              role={role}
+              editingDevice={editingDevice}
+              editName={editName}
+              applicationModes={applicationModes}
+              onEditClick={handleEditClick}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              onNameChange={setEditName}
+              onModeUpdate={updateDeviceMode}
+              onViewLogs={(devid) => {
+                setSelectedDeviceForLogs(devid);
+                setIsLogViewerOpen(true);
+              }}
+              onConfigureDevice={(devid) => {
+                setSelectedDeviceForConfig(devid);
+                setIsConfigDialogOpen(true);
+              }}
+              getStatusBadge={getStatusBadge}
+              getBatteryColor={getBatteryColor}
+              isDeveloper={role === 'developer'}
+            />
+          );
+        })}
       </div>
 
       {filteredDevices.length === 0 && devices.length > 0 && (
@@ -350,18 +363,28 @@ const DeviceList = () => {
            <p className="text-gray-500">No devices found. Add your first device to get started.</p>
          </div>
        )}
-       
-       {/* Device Log Viewer */}
-       {canModifyData && (
-         <DeviceLogViewer
-           deviceId={selectedDeviceForLogs}
-           isOpen={isLogViewerOpen}
-           onClose={() => {
-             setIsLogViewerOpen(false);
-             setSelectedDeviceForLogs(null);
-           }}
-         />
-       )}
+        
+        {/* Device Configuration Dialog */}
+        <DeviceConfigDialog
+          deviceId={selectedDeviceForConfig}
+          isOpen={isConfigDialogOpen}
+          onClose={() => {
+            setIsConfigDialogOpen(false);
+            setSelectedDeviceForConfig(null);
+          }}
+        />
+        
+        {/* Device Log Viewer */}
+        {canModifyData && (
+          <DeviceLogViewer
+            deviceId={selectedDeviceForLogs}
+            isOpen={isLogViewerOpen}
+            onClose={() => {
+              setIsLogViewerOpen(false);
+              setSelectedDeviceForLogs(null);
+            }}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

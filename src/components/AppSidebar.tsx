@@ -1,4 +1,4 @@
-import { MapPin, List, Users, Settings, Home, Activity, BarChart3, ExternalLink } from 'lucide-react';
+import { MapPin, List, Users, Settings, Home, Activity, BarChart3, ExternalLink, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTestRole } from '@/contexts/TestRoleContext';
@@ -34,7 +34,7 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   const mainItems = [
     { id: 'map', title: 'Map View', icon: MapPin, view: 'map' as const },
     { id: 'devices', title: 'Devices', icon: List, view: 'devices' as const },
-    { id: 'settings', title: 'Settings', icon: Settings, view: 'settings' as const },
+    { id: 'settings', title: 'Data Forwarding', icon: Send, view: 'settings' as const },
   ];
 
   const adminItems = [
