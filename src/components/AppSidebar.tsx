@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/sidebar';
 
 interface AppSidebarProps {
-  activeView: 'dashboard' | 'map' | 'devices' | 'users';
-  onViewChange: (view: 'dashboard' | 'map' | 'devices' | 'users') => void;
+  activeView: 'map' | 'devices' | 'users';
+  onViewChange: (view: 'map' | 'devices' | 'users') => void;
 }
 
 const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
@@ -32,7 +32,6 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   const collapsed = state === 'collapsed';
 
   const mainItems = [
-    { id: 'dashboard', title: 'Dashboard', icon: BarChart3, view: 'dashboard' as const },
     { id: 'map', title: 'Map View', icon: MapPin, view: 'map' as const },
     { id: 'devices', title: 'Devices', icon: List, view: 'devices' as const },
   ];

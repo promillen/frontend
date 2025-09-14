@@ -100,7 +100,6 @@ export type Database = {
           last_seen: string | null
           last_uplink_count: number | null
           name: string | null
-          sensor_profile_id: string | null
           sw_version: string | null
         }
         Insert: {
@@ -115,7 +114,6 @@ export type Database = {
           last_seen?: string | null
           last_uplink_count?: number | null
           name?: string | null
-          sensor_profile_id?: string | null
           sw_version?: string | null
         }
         Update: {
@@ -130,18 +128,9 @@ export type Database = {
           last_seen?: string | null
           last_uplink_count?: number | null
           name?: string | null
-          sensor_profile_id?: string | null
           sw_version?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "device_config_sensor_profile_id_fkey"
-            columns: ["sensor_profile_id"]
-            isOneToOne: false
-            referencedRelation: "sensor_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -240,75 +229,6 @@ export type Database = {
           },
         ]
       }
-      sensor_data_types: {
-        Row: {
-          created_at: string
-          data_schema: Json
-          description: string | null
-          display_name: string
-          id: string
-          name: string
-          unit: string | null
-          visualization_config: Json
-        }
-        Insert: {
-          created_at?: string
-          data_schema?: Json
-          description?: string | null
-          display_name: string
-          id?: string
-          name: string
-          unit?: string | null
-          visualization_config?: Json
-        }
-        Update: {
-          created_at?: string
-          data_schema?: Json
-          description?: string | null
-          display_name?: string
-          id?: string
-          name?: string
-          unit?: string | null
-          visualization_config?: Json
-        }
-        Relationships: []
-      }
-      sensor_profiles: {
-        Row: {
-          application_type: Database["public"]["Enums"]["application_type"]
-          config: Json
-          created_at: string
-          created_by: string | null
-          dashboard_layout: Json
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          application_type?: Database["public"]["Enums"]["application_type"]
-          config?: Json
-          created_at?: string
-          created_by?: string | null
-          dashboard_layout?: Json
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          application_type?: Database["public"]["Enums"]["application_type"]
-          config?: Json
-          created_at?: string
-          created_by?: string | null
-          dashboard_layout?: Json
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -345,12 +265,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "developer"
-      application_type:
-        | "geotracking"
-        | "agriculture"
-        | "environmental"
-        | "industrial"
-        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -479,13 +393,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "developer"],
-      application_type: [
-        "geotracking",
-        "agriculture",
-        "environmental",
-        "industrial",
-        "custom",
-      ],
     },
   },
 } as const
