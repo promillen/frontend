@@ -14,13 +14,13 @@ import DeviceFilter from '@/components/DeviceFilter';
 import TimeRangeSelector from '@/components/TimeRangeSelector';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import Settings from '@/components/Settings';
 
 const Dashboard = () => {
   const { loading: authLoading } = useAuth();
   const { loading: roleLoading, isActualDeveloper, isTestMode } = useUserRole();
   const { testRole, setTestRole } = useTestRole();
-  const [activeView, setActiveView] = useState<'map' | 'devices' | 'users'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'devices' | 'users' | 'settings'>('map');
   
   // Device selection with localStorage persistence
   const { selectedDevices, setSelectedDevices, allDevices, isInitialized } = useDeviceSelection();
@@ -72,6 +72,7 @@ const Dashboard = () => {
                   {activeView === 'map' && 'Device Locations'}
                   {activeView === 'devices' && 'Devices'}
                   {activeView === 'users' && 'User Management'}
+                  {activeView === 'settings' && 'Settings'}
                 </span>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -131,6 +132,8 @@ const Dashboard = () => {
             {activeView === 'devices' && <DeviceList />}
             
             {activeView === 'users' && <UserManagement />}
+            
+            {activeView === 'settings' && <Settings />}
           </main>
         </div>
       </div>

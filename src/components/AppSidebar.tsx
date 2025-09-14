@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/sidebar';
 
 interface AppSidebarProps {
-  activeView: 'map' | 'devices' | 'users';
-  onViewChange: (view: 'map' | 'devices' | 'users') => void;
+  activeView: 'map' | 'devices' | 'users' | 'settings';
+  onViewChange: (view: 'map' | 'devices' | 'users' | 'settings') => void;
 }
 
 const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
@@ -34,6 +34,7 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   const mainItems = [
     { id: 'map', title: 'Map View', icon: MapPin, view: 'map' as const },
     { id: 'devices', title: 'Devices', icon: List, view: 'devices' as const },
+    { id: 'settings', title: 'Settings', icon: Settings, view: 'settings' as const },
   ];
 
   const adminItems = [
