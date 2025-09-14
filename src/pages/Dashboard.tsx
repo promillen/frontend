@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTestRole } from '@/contexts/TestRoleContext';
+import { useDeviceSelection } from '@/hooks/useDeviceSelection';
 import { supabase } from '@/integrations/supabase/client';
 import AppSidebar from '@/components/AppSidebar';
 import MapView from '@/components/MapView';
@@ -21,9 +22,11 @@ const Dashboard = () => {
   const { testRole, setTestRole } = useTestRole();
   const [activeView, setActiveView] = useState<'map' | 'devices' | 'users'>('map');
   
+  // Device selection with localStorage persistence
+  const { selectedDevices, setSelectedDevices, allDevices, isInitialized } = useDeviceSelection();
+  
   // Map controls state
   const [activeTileLayer, setActiveTileLayer] = useState('cartodb_voyager');
-  const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [activeTimeRange, setActiveTimeRange] = useState('none');
   const [openMenu, setOpenMenu] = useState<'tile' | 'filter' | 'time' | null>(null);
 
@@ -97,23 +100,7 @@ const Dashboard = () => {
                           : [...prev, deviceId]
                       );
                     }}
-                    onSelectAll={() => {
-                      // Fetch all devices and select them
-                      const fetchAndSelectAll = async () => {
-                        try {
-                          const { data } = await supabase
-                            .from('device_config')
-                            .select('devid');
-                          if (data) {
-                            const allDeviceIds = data.map(d => d.devid);
-                            setSelectedDevices(allDeviceIds);
-                          }
-                        } catch (error) {
-                          console.error('Error fetching devices:', error);
-                        }
-                      };
-                      fetchAndSelectAll();
-                    }}
+                    onSelectAll={() => setSelectedDevices(allDevices)}
                     onSelectNone={() => setSelectedDevices([])}
                     isOpen={openMenu === 'filter'}
                     onToggle={() => setOpenMenu(openMenu === 'filter' ? null : 'filter')}
