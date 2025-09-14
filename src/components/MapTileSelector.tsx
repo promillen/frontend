@@ -55,7 +55,7 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
     <SimpleDropdown
       isOpen={isOpen}
       onClose={onToggle}
-      align="left"
+      align="right"
       trigger={
         <Button
           onClick={onToggle}
@@ -69,12 +69,6 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
       }
     >
       <div className="min-w-[200px]">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium">Map Style</span>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
         <div className="flex flex-col gap-1">
           {TILE_LAYERS.map((layer) => (
             <Button

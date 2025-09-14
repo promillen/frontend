@@ -59,7 +59,7 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
     <SimpleDropdown
       isOpen={isOpen}
       onClose={onToggle}
-      align="center"
+      align="right"
       trigger={
         <Button
           onClick={onToggle}
@@ -73,12 +73,6 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
       }
     >
       <div className="w-80">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium">Filter Devices</span>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading devices...</div>
         ) : (

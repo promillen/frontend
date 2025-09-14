@@ -52,15 +52,6 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
       }
     >
       <div className="min-w-[200px]">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span className="text-xs font-medium">Movement Tracking</span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
         <div className="flex flex-col gap-1">
           {TIME_RANGES.map((range) => (
             <Button
