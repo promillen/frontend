@@ -238,7 +238,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         )}
 
         <div className="grid grid-cols-1 gap-3 text-sm">
-          {role === 'admin' && (
+          {(role === 'admin' || role === 'developer') && (
             <div className="bg-background/20 backdrop-blur-sm rounded-lg p-3 space-y-1">
               <p className="text-muted-foreground"><span className="font-medium text-foreground">HW:</span> {device.hw_version}</p>
               <p className="text-muted-foreground"><span className="font-medium text-foreground">SW:</span> {device.sw_version}</p>
