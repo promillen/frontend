@@ -307,7 +307,6 @@ const MapView = ({
           min-width: 280px;
           margin: 0;
           padding: 0;
-          box-sizing: border-box;
         ">
           <!-- Header -->
           <div style="
@@ -342,7 +341,7 @@ const MapView = ({
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin: 0 4px 16px 4px;
+            margin: 0 16px 16px 16px;
           ">
             <!-- Device Info -->
             <div style="
@@ -446,7 +445,7 @@ const MapView = ({
             <!-- Action Button -->
             <div style="
               border-top: 1px solid #e2e8f0;
-              padding: 12px 4px 0 4px;
+              padding: 12px 16px 0 16px;
               margin-top: 16px;
             ">
               <button 
