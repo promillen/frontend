@@ -359,21 +359,16 @@ const DeviceList = () => {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {getStatusBadge(device.devid)}
-                    {device.battery_level && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-xs">🔋 Battery</span>
-                        <div className="flex items-center gap-2">
-                          <Battery 
-                            level={device.battery_level} 
-                            size="md"
-                            className={getBatteryColor(device.battery_level)}
-                          />
-                          <span className={`font-medium text-xs ${getBatteryColor(device.battery_level)}`}>
-                            {device.battery_level}%
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Battery 
+                        level={device.battery_level ?? 0} 
+                        size="md"
+                        className={device.battery_level ? getBatteryColor(device.battery_level) : 'text-muted-foreground'}
+                      />
+                      <span className={`font-medium text-xs ${device.battery_level ? getBatteryColor(device.battery_level) : 'text-muted-foreground'}`}>
+                        {device.battery_level ?? '?'}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
