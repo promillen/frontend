@@ -40,7 +40,6 @@ interface DeviceCardProps {
   onConfigureDevice: (devid: string) => void;
   getStatusBadge: (deviceId: string) => React.ReactNode;
   getBatteryColor: (level: number) => string;
-  isDeveloper: boolean;
 }
 
 const DeviceCard: React.FC<DeviceCardProps> = ({
@@ -58,8 +57,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   onViewLogs,
   onConfigureDevice,
   getStatusBadge,
-  getBatteryColor,
-  isDeveloper
+  getBatteryColor
 }) => {
   const { sensorData, loading: sensorLoading } = useSensorData(device.devid, enabledDataTypes);
   const { forwardData, isForwarding } = useDataForwarding();
@@ -294,7 +292,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
            </div>
          )}
          
-         {(role === 'admin' || role === 'moderator') && (
+         {(role === 'admin' || role === 'moderator' || role === 'developer') && (
            <div className="border-t border-border/30 pt-3 space-y-2">
              {/* Device Configuration Button */}
              <Button 
@@ -308,7 +306,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
              </Button>
              
              {/* Live Logs Button (Developer only) */}
-             {isDeveloper && (
+             {role === 'developer' && (
                <Button 
                  size="sm" 
                  variant="outline" 

@@ -346,7 +346,6 @@ const DeviceList = () => {
               }}
               getStatusBadge={getStatusBadge}
               getBatteryColor={getBatteryColor}
-              isDeveloper={role === 'developer'}
             />
           );
         })}
@@ -375,16 +374,14 @@ const DeviceList = () => {
         />
         
         {/* Device Log Viewer */}
-        {canModifyData && (
-          <DeviceLogViewer
-            deviceId={selectedDeviceForLogs}
-            isOpen={isLogViewerOpen}
-            onClose={() => {
-              setIsLogViewerOpen(false);
-              setSelectedDeviceForLogs(null);
-            }}
-          />
-        )}
+        <DeviceLogViewer
+          deviceId={selectedDeviceForLogs}
+          isOpen={isLogViewerOpen}
+          onClose={() => {
+            setIsLogViewerOpen(false);
+            setSelectedDeviceForLogs(null);
+          }}
+        />
       </div>
     </ErrorBoundary>
   );
