@@ -78,7 +78,7 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
           className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
         >
           <Filter className="h-4 w-4 mr-2" />
-          <span className="text-sm">Filter Devices</span>
+          <span className="text-sm font-normal">Filter Devices</span>
         </Button>
       }
     >

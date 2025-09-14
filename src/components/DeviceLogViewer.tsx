@@ -292,7 +292,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
   }
 
   return (
-    <div className="fixed top-0 left-0 w-full h-full z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }}>
       <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card backdrop-blur-sm shadow-2xl border-2">
         <CardHeader className="pb-3 border-b">
           <div className="flex items-center justify-between">

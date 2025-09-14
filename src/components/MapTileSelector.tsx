@@ -64,7 +64,7 @@ const MapTileSelector: React.FC<MapTileSelectorProps> = ({ activeLayer, onLayerC
           className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
         >
           <Map className="h-4 w-4 mr-2" />
-          <span className="text-sm">Map Style</span>
+          <span className="text-sm font-normal">Map Style</span>
         </Button>
       }
     >

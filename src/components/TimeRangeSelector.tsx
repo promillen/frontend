@@ -47,7 +47,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
           className="bg-background/95 backdrop-blur-sm hover:bg-accent border-border h-8 px-3 shadow-sm"
         >
           <Clock className="h-4 w-4 mr-2" />
-          <span className="text-sm">Location Interval</span>
+          <span className="text-sm font-normal">Location Interval</span>
         </Button>
       }
     >
