@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Filter, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Filter, X, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import SimpleDropdown from './SimpleDropdown';
 
@@ -30,6 +31,7 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
 }) => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchDevices();
@@ -55,6 +57,14 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
     }
   };
 
+  // Filter devices based on search term
+  const filteredDevices = devices.filter(device => {
+    const searchLower = searchTerm.toLowerCase();
+    const deviceName = (device.name || device.devid).toLowerCase();
+    const deviceId = device.devid.toLowerCase();
+    return deviceName.includes(searchLower) || deviceId.includes(searchLower);
+  });
+
   return (
     <SimpleDropdown
       isOpen={isOpen}
@@ -77,6 +87,17 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
           <div className="text-sm text-muted-foreground">Loading devices...</div>
         ) : (
           <>
+            <div className="mb-3">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search devices..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
             <div className="flex gap-2 mb-3">
               <Button variant="outline" size="sm" onClick={onSelectAll}>
                 Select All
@@ -86,24 +107,35 @@ const DeviceFilter: React.FC<DeviceFilterProps> = ({
               </Button>
             </div>
             <div className="max-h-60 overflow-y-auto space-y-2">
-              {devices.map((device) => (
-                <div key={device.devid} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={device.devid}
-                    checked={selectedDevices.includes(device.devid)}
-                    onCheckedChange={() => onDeviceToggle(device.devid)}
-                  />
-                  <label
-                    htmlFor={device.devid}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                  >
-                    {device.name || device.devid}
-                  </label>
+              {filteredDevices.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-4">
+                  {searchTerm ? 'No devices match your search' : 'No devices found'}
                 </div>
-              ))}
+              ) : (
+                filteredDevices.map((device) => (
+                  <div key={device.devid} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={device.devid}
+                      checked={selectedDevices.includes(device.devid)}
+                      onCheckedChange={() => onDeviceToggle(device.devid)}
+                    />
+                    <label
+                      htmlFor={device.devid}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                    >
+                      {device.name || device.devid}
+                    </label>
+                  </div>
+                ))
+              )}
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
               {selectedDevices.length} of {devices.length} devices selected
+              {searchTerm && (
+                <span className="block">
+                  Showing {filteredDevices.length} of {devices.length} devices
+                </span>
+              )}
             </div>
           </>
         )}
