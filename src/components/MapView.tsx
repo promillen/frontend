@@ -310,13 +310,13 @@ const MapView = ({
         ">
           <!-- Header -->
           <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
             padding: 12px 16px;
             margin: -12px -12px 16px -12px;
-            border-radius: 8px 8px 0 0;
             font-weight: 600;
             font-size: 16px;
+            color: #1e293b;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -324,15 +324,13 @@ const MapView = ({
             <span>${trackerName}</span>
             ${batteryLevel ? `
               <div style="
-                background: rgba(255,255,255,0.2);
+                background: #e2e8f0;
                 padding: 4px 8px;
-                border-radius: 12px;
+                border-radius: 6px;
                 font-size: 12px;
-                display: flex;
-                align-items: center;
-                gap: 4px;
+                color: #64748b;
+                font-weight: 500;
               ">
-                <span style="font-size: 10px;">🔋</span>
                 ${batteryLevel}%
               </div>
             ` : ''}
@@ -453,7 +451,7 @@ const MapView = ({
               <button 
                 onclick="window.showDeviceLogs('${location.devid}')"
                 style="
-                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  background: #667eea;
                   color: white;
                   border: none;
                   padding: 8px 16px;
@@ -464,10 +462,10 @@ const MapView = ({
                   width: 100%;
                   transition: all 0.2s ease;
                 "
-                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'"
-                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+                onmouseover="this.style.background='#5a67d8'"
+                onmouseout="this.style.background='#667eea'"
               >
-                📊 View Live Logs
+                View Live Logs
               </button>
             </div>
           ` : ''}
