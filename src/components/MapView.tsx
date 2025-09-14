@@ -30,6 +30,7 @@ interface LocationSensorData {
     name: string;
     hw_version: string;
     sw_version: string;
+    battery_level?: number;
   };
 }
 
@@ -282,24 +283,191 @@ const MapView = ({
     
     if (!lat || !lng) return;
 
+    // Format date as 24-hour time and dd/mm/yyyy
+    const date = new Date(location.created_at);
+    const formattedTime = date.toLocaleTimeString('en-GB', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    const formattedDate = date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+
+    const trackerName = location.device_config?.name || location.devid;
+    const batteryLevel = location.device_config?.battery_level;
+
     const marker = L.marker([lat, lng])
       .addTo(map.current!)
       .bindPopup(`
-        <div>
-          <h3><strong>${location.device_config?.name || location.devid}</strong></h3>
-          <p><strong>Device ID:</strong> ${location.devid}</p>
-          <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
-          ${location.data.altitude ? `<p><strong>Altitude:</strong> ${location.data.altitude}m</p>` : ''}
-          ${location.data.accuracy ? `<p><strong>Accuracy:</strong> ${location.data.accuracy}m</p>` : ''}
-          <p><strong>Last Update:</strong> ${new Date(location.created_at).toLocaleString()}</p>
-          ${location.device_config ? `
-            <p><strong>HW Version:</strong> ${location.device_config.hw_version}</p>
-            <p><strong>SW Version:</strong> ${location.device_config.sw_version}</p>
-          ` : ''}
+        <div style="
+          font-family: system-ui, -apple-system, sans-serif;
+          min-width: 280px;
+          margin: 0;
+          padding: 0;
+        ">
+          <!-- Header -->
+          <div style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            margin: -12px -12px 16px -12px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          ">
+            <span>${trackerName}</span>
+            ${batteryLevel ? `
+              <div style="
+                background: rgba(255,255,255,0.2);
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+              ">
+                <span style="font-size: 10px;">🔋</span>
+                ${batteryLevel}%
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Content Grid -->
+          <div style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+          ">
+            <!-- Device Info -->
+            <div style="
+              background: #f8fafc;
+              padding: 12px;
+              border-radius: 8px;
+              border-left: 3px solid #667eea;
+            ">
+              <div style="
+                font-size: 11px;
+                color: #64748b;
+                text-transform: uppercase;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+              ">Device ID</div>
+              <div style="
+                font-size: 13px;
+                font-weight: 500;
+                color: #334155;
+                font-family: monospace;
+              ">${location.devid}</div>
+            </div>
+
+            <!-- Last Update -->
+            <div style="
+              background: #f8fafc;
+              padding: 12px;
+              border-radius: 8px;
+              border-left: 3px solid #10b981;
+            ">
+              <div style="
+                font-size: 11px;
+                color: #64748b;
+                text-transform: uppercase;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+              ">Last Update</div>
+              <div style="
+                font-size: 13px;
+                font-weight: 500;
+                color: #334155;
+              ">${formattedTime}</div>
+              <div style="
+                font-size: 12px;
+                color: #64748b;
+              ">${formattedDate}</div>
+            </div>
+
+            ${location.data.altitude ? `
+              <!-- Altitude -->
+              <div style="
+                background: #f8fafc;
+                padding: 12px;
+                border-radius: 8px;
+                border-left: 3px solid #f59e0b;
+              ">
+                <div style="
+                  font-size: 11px;
+                  color: #64748b;
+                  text-transform: uppercase;
+                  font-weight: 600;
+                  letter-spacing: 0.5px;
+                  margin-bottom: 4px;
+                ">Altitude</div>
+                <div style="
+                  font-size: 13px;
+                  font-weight: 500;
+                  color: #334155;
+                ">${location.data.altitude}m</div>
+              </div>
+            ` : ''}
+
+            ${location.data.accuracy ? `
+              <!-- Accuracy -->
+              <div style="
+                background: #f8fafc;
+                padding: 12px;
+                border-radius: 8px;
+                border-left: 3px solid #8b5cf6;
+              ">
+                <div style="
+                  font-size: 11px;
+                  color: #64748b;
+                  text-transform: uppercase;
+                  font-weight: 600;
+                  letter-spacing: 0.5px;
+                  margin-bottom: 4px;
+                ">Accuracy</div>
+                <div style="
+                  font-size: 13px;
+                  font-weight: 500;
+                  color: #334155;
+                ">±${location.data.accuracy}m</div>
+              </div>
+            ` : ''}
+          </div>
+
           ${canModifyData ? `
-            <div class="mt-2">
-              <button onclick="window.showDeviceLogs('${location.devid}')" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">
-                View Live Logs
+            <!-- Action Button -->
+            <div style="
+              border-top: 1px solid #e2e8f0;
+              padding-top: 12px;
+              margin-top: 16px;
+            ">
+              <button 
+                onclick="window.showDeviceLogs('${location.devid}')"
+                style="
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                  border: none;
+                  padding: 8px 16px;
+                  border-radius: 6px;
+                  font-size: 12px;
+                  font-weight: 500;
+                  cursor: pointer;
+                  width: 100%;
+                  transition: all 0.2s ease;
+                "
+                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+              >
+                📊 View Live Logs
               </button>
             </div>
           ` : ''}
