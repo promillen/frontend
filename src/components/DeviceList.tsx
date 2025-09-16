@@ -298,25 +298,12 @@ const DeviceList = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <div className="flex justify-end items-center">
-          <div className="flex gap-2">
-            <Button onClick={fetchDevices} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            {(role === 'admin' || role === 'moderator') && (
-              <Button size="sm" variant="default">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Device
-              </Button>
-            )}
-          </div>
-        </div>
-
         <DeviceFiltersComponent
           filters={filters}
           onFiltersChange={setFilters}
           availableModes={availableModes}
+          onRefresh={fetchDevices}
+          canAddDevice={role === 'admin' || role === 'moderator'}
         />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

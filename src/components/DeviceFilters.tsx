@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Filter, X, RotateCcw } from 'lucide-react';
+import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus } from 'lucide-react';
 
 export interface DeviceFilters {
   search: string;
@@ -24,9 +24,11 @@ interface DeviceFiltersProps {
   filters: DeviceFilters;
   onFiltersChange: (filters: DeviceFilters) => void;
   availableModes: string[];
+  onRefresh: () => void;
+  canAddDevice: boolean;
 }
 
-const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes }: DeviceFiltersProps) => {
+const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice }: DeviceFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
 
@@ -66,7 +68,7 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes }: De
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <div className="flex-1">
             <Input
               placeholder="Search devices by name, ID, or ICCID..."
@@ -88,6 +90,16 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes }: De
                 <ChevronDown className="w-4 h-4 ml-1" />
               </Button>
             </CollapsibleTrigger>
+            <Button onClick={onRefresh} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            {canAddDevice && (
+              <Button size="sm" variant="default">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Device
+              </Button>
+            )}
           </div>
         </div>
 
