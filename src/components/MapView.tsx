@@ -465,7 +465,7 @@ const MapView = ({
                 onmouseover="this.style.background='#5a67d8'"
                 onmouseout="this.style.background='#667eea'"
               >
-                View Live Logs
+                View Device Logs
               </button>
             </div>
           ` : ''}

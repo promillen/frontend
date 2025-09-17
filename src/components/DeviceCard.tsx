@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit2, Check, X, ChevronDown, Activity, Send, Settings } from 'lucide-react';
+import { Edit2, Check, X, ChevronDown, Database, Send, Settings } from 'lucide-react';
 import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useSensorData } from '@/hooks/useSensorData';
@@ -313,8 +313,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                  onClick={() => onViewLogs(device.devid)}
                  className="w-full bg-secondary/5 hover:bg-secondary/10 border-secondary/20"
                >
-                 <Activity className="h-4 w-4 mr-2" />
-                 View Live Logs
+                  <Database className="h-4 w-4 mr-2" />
+                  View Device Logs
                </Button>
              )}
            </div>
