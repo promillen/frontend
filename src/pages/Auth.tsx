@@ -16,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('signin');
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,9 +111,14 @@ const Auth = () => {
         });
       } else {
         toast({
-          title: "Success",
-          description: "Account created successfully! You can now sign in.",
+          title: "Check your email",
+          description: "We've sent you a confirmation email. Please verify your account before signing in.",
         });
+        // Switch to sign in tab
+        setActiveTab('signin');
+        // Clear the signup form
+        setFullName('');
+        setPassword('');
       }
     } catch (error) {
       toast({
@@ -167,7 +173,7 @@ const Auth = () => {
           <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
