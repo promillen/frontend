@@ -274,11 +274,14 @@ const DeviceList = () => {
         if (device.application_mode !== filters.applicationMode) return false;
       }
 
-      // Battery range filter
+      // Battery filter: only apply when battery is a percentage (0-100)
       if (device.battery_level !== null && device.battery_level !== undefined) {
         const battery = device.battery_level;
-        if (battery < filters.batteryRange[0] || battery > filters.batteryRange[1]) {
-          return false;
+        const isPercent = battery >= 0 && battery <= 100;
+        if (isPercent) {
+          if (battery < filters.batteryRange[0] || battery > filters.batteryRange[1]) {
+            return false;
+          }
         }
       }
 
