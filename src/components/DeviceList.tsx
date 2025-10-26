@@ -191,6 +191,39 @@ const DeviceList = () => {
     }
   };
 
+  const updateHeartbeatInterval = async (devid: string, interval: number) => {
+    try {
+      const { error } = await supabase
+        .from('device_config')
+        .update({ heartbeat_interval: interval })
+        .eq('devid', devid);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update heartbeat interval",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, heartbeat_interval: interval } : device
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Heartbeat interval updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update heartbeat interval",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditClick = (device: DeviceConfig) => {
     setEditingDevice(device.devid);
     setEditName(device.name || device.devid);
@@ -326,6 +359,7 @@ const DeviceList = () => {
               onCancelEdit={handleCancelEdit}
               onNameChange={setEditName}
               onModeUpdate={updateDeviceMode}
+              onHeartbeatUpdate={updateHeartbeatInterval}
               onViewLogs={(devid) => {
                 setSelectedDeviceForLogs(devid);
                 setIsLogViewerOpen(true);

@@ -36,6 +36,7 @@ interface DeviceCardProps {
   onCancelEdit: () => void;
   onNameChange: (name: string) => void;
   onModeUpdate: (devid: string, mode: string) => void;
+  onHeartbeatUpdate: (devid: string, interval: number) => void;
   onViewLogs: (devid: string) => void;
   onConfigureDevice: (devid: string) => void;
   getStatusBadge: (deviceId: string) => React.ReactNode;
@@ -54,6 +55,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   onCancelEdit,
   onNameChange,
   onModeUpdate,
+  onHeartbeatUpdate,
   onViewLogs,
   onConfigureDevice,
   getStatusBadge,
@@ -248,7 +250,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           
           <div className="flex items-center justify-between">
             <span className="font-medium text-foreground">Mode:</span>
-            {(role === 'admin' || role === 'moderator') ? (
+            {(role === 'admin' || role === 'moderator' || role === 'developer') ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10">
@@ -278,7 +280,43 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           {device.heartbeat_interval && (
             <div className="flex items-center justify-between">
               <span className="font-medium text-foreground">Heartbeat:</span>
-              <span className="text-muted-foreground">{device.heartbeat_interval}s</span>
+              {(role === 'admin' || role === 'moderator' || role === 'developer') ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10">
+                      {device.heartbeat_interval >= 86400 ? '24h' :
+                       device.heartbeat_interval >= 43200 ? '12h' :
+                       device.heartbeat_interval >= 21600 ? '6h' :
+                       device.heartbeat_interval >= 3600 ? '1h' :
+                       device.heartbeat_interval >= 1800 ? '30m' :
+                       device.heartbeat_interval >= 300 ? '5m' :
+                       device.heartbeat_interval >= 60 ? '1m' :
+                       `${device.heartbeat_interval}s`}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)} className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)} className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)} className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)} className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-muted-foreground">
+                  {device.heartbeat_interval >= 86400 ? '24h' :
+                   device.heartbeat_interval >= 43200 ? '12h' :
+                   device.heartbeat_interval >= 21600 ? '6h' :
+                   device.heartbeat_interval >= 3600 ? '1h' :
+                   device.heartbeat_interval >= 1800 ? '30m' :
+                   device.heartbeat_interval >= 300 ? '5m' :
+                   device.heartbeat_interval >= 60 ? '1m' :
+                   `${device.heartbeat_interval}s`}
+                </span>
+              )}
             </div>
           )}
         </div>
