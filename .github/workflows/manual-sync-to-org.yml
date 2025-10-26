@@ -27,7 +27,7 @@ jobs:
 
       - name: Add organization remote
         run: |
-          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Landing-page.git
+          git remote add org https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/MOC-IoT/Dashboard.git
 
       - name: Force push to org main
         run: git push --force org HEAD:main
