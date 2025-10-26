@@ -34,6 +34,9 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
   const mainItems = [
     { id: 'map', title: 'Map View', icon: MapPin, view: 'map' as const },
     { id: 'devices', title: 'Devices', icon: List, view: 'devices' as const },
+  ];
+
+  const dataForwardingItems = [
     { id: 'settings', title: 'Data Forwarding', icon: Send, view: 'settings' as const },
   ];
 
@@ -82,6 +85,27 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {(role === 'admin' || role === 'developer') && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Data Management</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {dataForwardingItems.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      className={`${getNavClassName(item.view)} layout-transition hover:scale-[1.02] active:scale-[0.98]`}
+                      onClick={() => onViewChange(item.view)}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {!collapsed && <span className="layout-transition">{item.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {(role === 'admin' || role === 'developer') && (
           <SidebarGroup>
