@@ -294,8 +294,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
          
          {(role === 'moderator' || role === 'developer' || role === 'admin') && (
            <div className="border-t border-border/30 pt-3 space-y-2">
-             {/* Device Configuration Button (Moderator and Admin) */}
-             {(role === 'moderator' || role === 'admin') && (
+             {/* Device Configuration Button (Moderator, Admin, and Developer) */}
+             {(role === 'moderator' || role === 'admin' || role === 'developer') && (
                <Button 
                  size="sm" 
                  variant="outline" 

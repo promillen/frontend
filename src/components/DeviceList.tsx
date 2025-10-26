@@ -306,7 +306,7 @@ const DeviceList = () => {
           onFiltersChange={setFilters}
           availableModes={availableModes}
           onRefresh={fetchDevices}
-          canAddDevice={role === 'admin' || role === 'moderator'}
+          canAddDevice={role === 'admin' || role === 'moderator' || role === 'developer'}
         />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
