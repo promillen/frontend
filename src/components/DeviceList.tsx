@@ -1,15 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
-import { RefreshCw, Plus, Edit2, Check, X, Search, ChevronDown, Activity, Send } from 'lucide-react';
-import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
 import LoadingSkeleton from './LoadingSkeleton';
 import ErrorBoundary from './ErrorBoundary';
@@ -18,8 +12,6 @@ import DeviceLogViewer from './DeviceLogViewer';
 import DeviceConfigDialog from './DeviceConfigDialog';
 import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
 import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
-import { useSensorData } from '@/hooks/useSensorData';
-import { useDataForwarding } from '@/hooks/useDataForwarding';
 
 interface DeviceConfig {
   devid: string;
@@ -248,15 +240,17 @@ const DeviceList = () => {
     return 'text-red-500';
   };
 
-  const getDeviceStatus = (lastSeen: string | null): 'online' | 'warning' | 'offline' => {
-    if (!lastSeen) return 'offline';
-    
+  const getDeviceStatus = (lastSeen: string | null, heartbeatSeconds: number | null): 'online' | 'warning' | 'offline' => {
+    // Guard clause: if either value is missing, mark as offline
+    if (!lastSeen || !heartbeatSeconds) return 'offline';
+
     const lastUpdate = new Date(lastSeen);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+    const heartbeatMinutes = heartbeatSeconds / 60;
 
-    if (diffMinutes < 30) return 'online';
-    if (diffMinutes < 120) return 'warning';
+    if (diffMinutes <= heartbeatMinutes) return 'online';
+    if (diffMinutes <= heartbeatMinutes * 2) return 'warning';
     return 'offline';
   };
 
@@ -266,7 +260,7 @@ const DeviceList = () => {
       return <Badge variant="secondary">No Data</Badge>;
     }
 
-    const status = getDeviceStatus(device.last_seen);
+    const status = getDeviceStatus(device.last_seen, device.heartbeat_interval);
     
     if (status === 'online') {
       return <Badge variant="default" className="bg-green-500">Online</Badge>;
@@ -298,7 +292,7 @@ const DeviceList = () => {
 
       // Status filter
       if (filters.status !== 'all') {
-        const status = getDeviceStatus(device.last_seen);
+        const status = getDeviceStatus(device.last_seen, device.heartbeat_interval);
         if (status !== filters.status) return false;
       }
 
