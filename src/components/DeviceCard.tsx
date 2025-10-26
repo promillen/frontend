@@ -237,8 +237,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3 text-sm">
-          {(role === 'admin' || role === 'developer') && (
+          <div className="grid grid-cols-1 gap-3 text-sm">
+          {role === 'developer' && (
             <div className="bg-background/20 backdrop-blur-sm rounded-lg p-3 space-y-1">
               <p className="text-muted-foreground"><span className="font-medium text-foreground">HW:</span> {device.hw_version}</p>
               <p className="text-muted-foreground"><span className="font-medium text-foreground">SW:</span> {device.sw_version}</p>
@@ -292,18 +292,20 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
            </div>
          )}
          
-         {(role === 'admin' || role === 'moderator' || role === 'developer') && (
+         {(role === 'moderator' || role === 'developer') && (
            <div className="border-t border-border/30 pt-3 space-y-2">
-             {/* Device Configuration Button */}
-             <Button 
-               size="sm" 
-               variant="outline" 
-               onClick={() => onConfigureDevice(device.devid)}
-               className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-             >
-               <Settings className="h-4 w-4 mr-2" />
-               Configure Device
-             </Button>
+             {/* Device Configuration Button (Moderator only) */}
+             {role === 'moderator' && (
+               <Button 
+                 size="sm" 
+                 variant="outline" 
+                 onClick={() => onConfigureDevice(device.devid)}
+                 className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
+               >
+                 <Settings className="h-4 w-4 mr-2" />
+                 Configure Device
+               </Button>
+             )}
              
              {/* Live Logs Button (Developer only) */}
              {role === 'developer' && (
