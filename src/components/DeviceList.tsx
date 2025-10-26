@@ -275,7 +275,7 @@ const DeviceList = () => {
     return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
   };
 
-  const applicationModes = ['tracking', 'monitoring', 'maintenance', 'standby'];
+  const applicationModes = ['None', 'GPS', 'WiFi', 'GPS + WiFi', 'WiFi + GPS'];
 
   // Apply filters to devices
   const filteredDevices = useMemo(() => {

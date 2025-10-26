@@ -64,13 +64,32 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   const { sensorData, loading: sensorLoading } = useSensorData(device.devid, enabledDataTypes);
   const { forwardData, isForwarding } = useDataForwarding();
 
+  const canEdit = ['admin', 'moderator', 'developer'].includes(role);
+
+  const batteryColorClass = device.battery_level != null ? getBatteryColor(device.battery_level) : 'text-muted-foreground';
+
+  const formatHeartbeat = (raw?: number | null) => {
+    const s = Number(raw ?? 0);
+    if (s <= 0) return 'null';           // treat 0/empty as not present
+    if (s >= 86400) return '24h';
+    if (s >= 43200) return '12h';
+    if (s >= 21600) return '6h';
+    if (s >= 3600) return '1h';
+    if (s >= 1800) return '30m';
+    if (s >= 300) return '5m';
+    if (s >= 60) return '1m';
+    return `${s}s`;
+  };
+
+  const hbLabel = formatHeartbeat(device.heartbeat_interval);
+
   const formatDanishTime = (dateString: string) => {
     return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
   };
 
   const handleForwardData = async () => {
     const dataToForward: Record<string, any> = {};
-    
+
     // Collect all sensor data for forwarding
     Object.entries(sensorData).forEach(([dataType, data]) => {
       dataToForward[dataType] = data.data;
@@ -91,25 +110,25 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           return `${data.temperature}°C`;
         }
         return typeof data === 'number' ? `${data}°C` : 'Invalid data';
-      
+
       case 'location':
         if (typeof data === 'object' && data.latitude && data.longitude) {
           return `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`;
         }
         return 'Invalid location';
-      
+
       case 'ph':
         return typeof data === 'number' ? `pH ${data.toFixed(2)}` : data.ph ? `pH ${data.ph.toFixed(2)}` : 'Invalid pH';
-      
+
       case 'soil_moisture':
         return typeof data === 'number' ? `${data}%` : data.moisture ? `${data.moisture}%` : 'Invalid moisture';
-      
+
       case 'humidity':
         return typeof data === 'number' ? `${data}%` : data.humidity ? `${data.humidity}%` : 'Invalid humidity';
-      
+
       case 'pressure':
         return typeof data === 'number' ? `${data} hPa` : data.pressure ? `${data.pressure} hPa` : 'Invalid pressure';
-      
+
       default:
         // Generic handling for unknown data types
         if (typeof data === 'object') {
@@ -160,10 +179,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 <CardTitle className="text-lg">
                   {device.name || device.devid}
                 </CardTitle>
-                {(role === 'admin' || role === 'moderator') && (
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
+                {['admin', 'moderator'].includes(role) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={() => onEditClick(device)}
                     className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   >
@@ -177,20 +196,30 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           <div className="flex flex-col items-end gap-2">
             {getStatusBadge(device.devid)}
             <div className="flex items-center gap-2">
-              <Battery 
-                level={device.battery_level ?? 0} 
-                size="md"
-                className={device.battery_level ? getBatteryColor(device.battery_level) : 'text-muted-foreground'}
-              />
-              <span className={`font-medium text-xs ${device.battery_level ? getBatteryColor(device.battery_level) : 'text-muted-foreground'}`}>
-                {device.battery_level ?? '?'}%
+              <span className={`font-medium text-xs ${batteryColorClass}`}>
+                {device.battery_level != null ? (device.battery_level / 1000).toFixed(3) + ' V' : '?'}
               </span>
+              <Battery
+                level={device.battery_level ?? 0}
+                size="md"
+                className={batteryColorClass}
+              />
             </div>
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="relative space-y-3">
+        <div className="grid grid-cols-1 gap-3 text-sm">
+          {role === 'developer' && (
+            <div>
+              <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">HW:</span> {device.hw_version || 'null'}</p>
+              <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">SW:</span> {device.sw_version || 'null'}</p>
+              <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">ICCID:</span> {device.iccid?.trim() || 'null'}</p>
+            </div>
+          )}
+        </div>
+
         {/* Sensor Data Section */}
         {enabledDataTypes.length > 0 && (
           <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
@@ -239,21 +268,18 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
         )}
 
-          <div className="grid grid-cols-1 gap-3 text-sm">
-          {role === 'developer' && (
-            <div className="bg-background/20 backdrop-blur-sm rounded-lg p-3 space-y-1">
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">HW:</span> {device.hw_version}</p>
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">SW:</span> {device.sw_version}</p>
-              {device.iccid && <p className="text-muted-foreground font-mono text-xs"><span className="font-medium text-foreground">ICCID:</span> {device.iccid}</p>}
-            </div>
-          )}
-          
+        <div className="grid grid-cols-1 gap-3 text-sm">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Mode:</span>
-            {(role === 'admin' || role === 'moderator' || role === 'developer') ? (
+            <span className="font-medium text-foreground">Tracking mode:</span>
+
+            {canEdit ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                  >
                     {device.application_mode || 'Select'}
                     <ChevronDown className="h-3 w-3 ml-1" />
                   </Button>
@@ -276,89 +302,78 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               </Badge>
             )}
           </div>
-          
-          {device.heartbeat_interval && (
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-foreground">Heartbeat:</span>
-              {(role === 'admin' || role === 'moderator' || role === 'developer') ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10">
-                      {device.heartbeat_interval >= 86400 ? '24h' :
-                       device.heartbeat_interval >= 43200 ? '12h' :
-                       device.heartbeat_interval >= 21600 ? '6h' :
-                       device.heartbeat_interval >= 3600 ? '1h' :
-                       device.heartbeat_interval >= 1800 ? '30m' :
-                       device.heartbeat_interval >= 300 ? '5m' :
-                       device.heartbeat_interval >= 60 ? '1m' :
-                       `${device.heartbeat_interval}s`}
-                      <ChevronDown className="h-3 w-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)} className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)} className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)} className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)} className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <span className="text-muted-foreground">
-                  {device.heartbeat_interval >= 86400 ? '24h' :
-                   device.heartbeat_interval >= 43200 ? '12h' :
-                   device.heartbeat_interval >= 21600 ? '6h' :
-                   device.heartbeat_interval >= 3600 ? '1h' :
-                   device.heartbeat_interval >= 1800 ? '30m' :
-                   device.heartbeat_interval >= 300 ? '5m' :
-                   device.heartbeat_interval >= 60 ? '1m' :
-                   `${device.heartbeat_interval}s`}
-                </span>
-              )}
-            </div>
-          )}
+
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-foreground">Heartbeat:</span>
+
+            {canEdit ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                  >
+                    {hbLabel}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                {/* Do not include a "null" option */}
+                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)}    className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)}   className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)}  className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)}  className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <span className="text-muted-foreground">{hbLabel}</span>
+            )}
+          </div>
         </div>
-        
-         {device.last_seen && (
-           <div className="border-t border-border/30 pt-3">
-             <div className="flex items-center justify-between text-sm">
-               <span className="font-medium text-foreground">Last Seen:</span>
-               <span className="text-muted-foreground font-mono text-xs">{formatDanishTime(device.last_seen)}</span>
-             </div>
-           </div>
-         )}
-         
-         {(role === 'moderator' || role === 'developer' || role === 'admin') && (
-           <div className="border-t border-border/30 pt-3 space-y-2">
-             {/* Device Configuration Button (Moderator, Admin, and Developer) */}
-             {(role === 'moderator' || role === 'admin' || role === 'developer') && (
-               <Button 
-                 size="sm" 
-                 variant="outline" 
-                 onClick={() => onConfigureDevice(device.devid)}
-                 className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-               >
-                 <Settings className="h-4 w-4 mr-2" />
-                 Configure Device
-               </Button>
-             )}
-             
-             {/* Live Logs Button (Developer only) */}
-             {role === 'developer' && (
-               <Button 
-                 size="sm" 
-                 variant="outline" 
-                 onClick={() => onViewLogs(device.devid)}
-                 className="w-full bg-secondary/5 hover:bg-secondary/10 border-secondary/20"
-               >
-                  <Database className="h-4 w-4 mr-2" />
-                  View Device Logs
-               </Button>
-             )}
-           </div>
-         )}
+
+        {device.last_seen && (
+          <div className="border-t border-border/30 pt-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Last Seen:</span>
+              <span className="text-muted-foreground font-mono text-xs">{formatDanishTime(device.last_seen)}</span>
+            </div>
+          </div>
+        )}
+
+        {canEdit && (
+          <div className="border-t border-border/30 pt-3 space-y-2">
+            {/* Device Configuration Button (Moderator, Admin, and Developer) */}
+            {canEdit && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onConfigureDevice(device.devid)}
+                className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configure Device
+              </Button>
+            )}
+
+            {/* Live Logs Button (Developer only) */}
+            {role === 'developer' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onViewLogs(device.devid)}
+                className="w-full bg-secondary/5 hover:bg-secondary/10 border-secondary/20"
+              >
+                <Database className="h-4 w-4 mr-2" />
+                View Device Logs
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

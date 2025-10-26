@@ -136,7 +136,7 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
               <div className="flex items-center gap-2">
                 {role && (
                   <Badge variant="outline" className="capitalize text-xs bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-                    {role}
+                    {isActualDeveloper ? 'developer' : role}
                   </Badge>
                 )}
                 {/* Docs Button for Developers */}
@@ -158,7 +158,6 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-sidebar-foreground/60">View as:</span>
-                    {isTestMode && <Badge variant="secondary" className="text-xs">Test Mode</Badge>}
                   </div>
                   <Select 
                     value={testRole || 'developer'} 
@@ -169,9 +168,9 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
                     </SelectTrigger>
                     <SelectContent className="z-[9999] bg-background border">
                       <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="admin">Test as Admin</SelectItem>
-                      <SelectItem value="moderator">Test as Moderator</SelectItem>
-                      <SelectItem value="user">Test as User</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="moderator">Moderator</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
