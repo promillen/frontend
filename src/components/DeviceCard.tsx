@@ -9,7 +9,7 @@ import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useSensorData } from '@/hooks/useSensorData';
 import { useDataForwarding } from '@/hooks/useDataForwarding';
-import { APPLICATION_MODE_MAP } from './DeviceList';
+import { APPLICATION_MODE_MAP, SENSOR_TYPE_MAP } from './DeviceList';
 
 interface DeviceConfig {
   devid: string;
@@ -19,6 +19,7 @@ interface DeviceConfig {
   sw_version: string;
   hw_version: string;
   application_mode: number;
+  sensor_type: number;
   device_data_updated_at: string;
   last_seen: string;
   created_at: string;
@@ -37,6 +38,7 @@ interface DeviceCardProps {
   onNameChange: (name: string) => void;
   onModeUpdate: (devid: string, mode: number) => void;
   onHeartbeatUpdate: (devid: string, interval: number) => void;
+  onSensorTypeUpdate: (devid: string, sensorType: number) => void;
   onViewLogs: (devid: string) => void;
   onConfigureDevice: (devid: string) => void;
   getStatusBadge: (deviceId: string) => React.ReactNode;
@@ -57,6 +59,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   onNameChange,
   onModeUpdate,
   onHeartbeatUpdate,
+  onSensorTypeUpdate,
   onViewLogs,
   onConfigureDevice,
   getStatusBadge,
@@ -277,6 +280,40 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
         <div className="grid grid-cols-1 gap-3 text-sm">
           <div className="flex items-center justify-between">
+            <span className="font-medium text-foreground">Sensor type:</span>
+
+            {canEdit ? (
+              <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                  >
+                    {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                  {Object.entries(SENSOR_TYPE_MAP).map(([typeNum, typeLabel]) => (
+                    <DropdownMenuItem
+                      key={typeNum}
+                      onClick={() => onSensorTypeUpdate(device.devid, parseInt(typeNum))}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      {typeLabel}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Badge variant="secondary" className="bg-background/50 backdrop-blur-sm">
+                {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
             <span className="font-medium text-foreground">Tracking mode:</span>
 
             {canEdit ? (
@@ -311,7 +348,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Heartbeat:</span>
+            <span className="font-medium text-foreground">Reporting interval:</span>
 
             {canEdit ? (
               <DropdownMenu onOpenChange={(open) => setIsDropdownOpen(open)}>

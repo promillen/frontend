@@ -21,6 +21,7 @@ interface DeviceConfig {
   sw_version: string;
   hw_version: string;
   application_mode: number;
+  sensor_type: number;
   device_data_updated_at: string;
   last_seen: string;
   created_at: string;
@@ -33,6 +34,12 @@ export const APPLICATION_MODE_MAP: Record<number, string> = {
   1: 'Cell Tower',
   2: 'GPS',
   3: 'WiFi',
+};
+
+// Sensor type mapping
+export const SENSOR_TYPE_MAP: Record<number, string> = {
+  0: 'Tracker',
+  1: 'Soil Sensor',
 };
 
 interface LocationSensorData {
@@ -201,7 +208,7 @@ const DeviceList = () => {
       if (error) {
         toast({
           title: "Error",
-          description: "Failed to update heartbeat interval",
+          description: "Failed to update reporting interval",
           variant: "destructive",
         });
         return;
@@ -213,12 +220,45 @@ const DeviceList = () => {
       
       toast({
         title: "Success",
-        description: "Heartbeat interval updated successfully",
+        description: "Reporting interval updated successfully",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update heartbeat interval",
+        description: "Failed to update reporting interval",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateSensorType = async (devid: string, sensorType: number) => {
+    try {
+      const { error } = await supabase
+        .from('device_config')
+        .update({ sensor_type: sensorType })
+        .eq('devid', devid);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update sensor type",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, sensor_type: sensorType } : device
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Sensor type updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update sensor type",
         variant: "destructive",
       });
     }
@@ -360,6 +400,7 @@ const DeviceList = () => {
               onNameChange={setEditName}
               onModeUpdate={updateDeviceMode}
               onHeartbeatUpdate={updateHeartbeatInterval}
+              onSensorTypeUpdate={updateSensorType}
               onViewLogs={(devid) => {
                 setSelectedDeviceForLogs(devid);
                 setIsLogViewerOpen(true);

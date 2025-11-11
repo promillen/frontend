@@ -101,6 +101,7 @@ export type Database = {
           last_seen: string | null
           last_uplink_count: number | null
           name: string | null
+          sensor_type: number | null
           sw_version: string | null
         }
         Insert: {
@@ -116,6 +117,7 @@ export type Database = {
           last_seen?: string | null
           last_uplink_count?: number | null
           name?: string | null
+          sensor_type?: number | null
           sw_version?: string | null
         }
         Update: {
@@ -131,6 +133,7 @@ export type Database = {
           last_seen?: string | null
           last_uplink_count?: number | null
           name?: string | null
+          sensor_type?: number | null
           sw_version?: string | null
         }
         Relationships: []
