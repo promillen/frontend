@@ -64,7 +64,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   const { forwardData, isForwarding } = useDataForwarding();
 
   const canEdit = ['admin', 'moderator', 'developer'].includes(role);
-  const [isHovered, setIsHovered] = React.useState(false);
 
   const batteryColorClass = device.battery_level != null ? getBatteryColor(device.battery_level) : 'text-muted-foreground';
 
@@ -151,11 +150,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   };
 
   return (
-    <Card
-      className={`group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1 focus-within:-translate-y-1 ${isHovered ? '-translate-y-1 shadow-md' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <Card className="group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1">
       <CardHeader className="relative">
         <div className="flex justify-between items-start">
           <div className="flex-1">
@@ -288,7 +283,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                     <ChevronDown className="h-3 w-3 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50">
                   {Object.entries(APPLICATION_MODE_MAP).map(([modeNum, modeLabel]) => (
                     <DropdownMenuItem
                       key={modeNum}
