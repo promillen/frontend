@@ -373,7 +373,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={() => onViewLogs(device.devid)}
-                className="w-full bg-secondary/5 hover:bg-secondary/10 border-secondary/20"
+                className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
               >
                 <Database className="h-4 w-4 mr-2" />
                 View Device Logs
