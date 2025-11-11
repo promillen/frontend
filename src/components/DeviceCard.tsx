@@ -150,7 +150,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   };
 
   return (
-    <Card className="group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1">
+    <Card className="group relative overflow-hidden border-t-4 border-t-red-500 hover:shadow-md shadow-sm transition-all duration-300 hover:-translate-y-1 focus-within:-translate-y-1">
       <CardHeader className="relative">
         <div className="flex justify-between items-start">
           <div className="flex-1">
