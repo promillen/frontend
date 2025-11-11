@@ -295,15 +295,17 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                  {Object.entries(SENSOR_TYPE_MAP).map(([typeNum, typeLabel]) => (
-                    <DropdownMenuItem
-                      key={typeNum}
-                      onClick={() => onSensorTypeUpdate(device.devid, parseInt(typeNum))}
-                      className="hover:bg-primary/10 cursor-pointer"
-                    >
-                      {typeLabel}
-                    </DropdownMenuItem>
-                  ))}
+                  {Object.entries(SENSOR_TYPE_MAP)
+                    .filter(([typeNum]) => typeNum !== '0') // Exclude "Not Configured" from dropdown
+                    .map(([typeNum, typeLabel]) => (
+                      <DropdownMenuItem
+                        key={typeNum}
+                        onClick={() => onSensorTypeUpdate(device.devid, parseInt(typeNum))}
+                        className="hover:bg-primary/10 cursor-pointer"
+                      >
+                        {typeLabel}
+                      </DropdownMenuItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

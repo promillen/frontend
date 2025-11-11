@@ -38,8 +38,9 @@ export const APPLICATION_MODE_MAP: Record<number, string> = {
 
 // Sensor type mapping
 export const SENSOR_TYPE_MAP: Record<number, string> = {
-  0: 'Tracker',
-  1: 'Soil Sensor',
+  0: 'Not Configured',
+  1: 'Tracker',
+  2: 'Soil Sensor',
 };
 
 interface LocationSensorData {
