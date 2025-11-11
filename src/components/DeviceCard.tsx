@@ -9,6 +9,7 @@ import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useSensorData } from '@/hooks/useSensorData';
 import { useDataForwarding } from '@/hooks/useDataForwarding';
+import { APPLICATION_MODE_MAP } from './DeviceList';
 
 interface DeviceConfig {
   devid: string;
@@ -17,7 +18,7 @@ interface DeviceConfig {
   heartbeat_interval: number;
   sw_version: string;
   hw_version: string;
-  application_mode: string;
+  application_mode: number;
   device_data_updated_at: string;
   last_seen: string;
   created_at: string;
@@ -30,12 +31,11 @@ interface DeviceCardProps {
   role: string;
   editingDevice: string | null;
   editName: string;
-  applicationModes: string[];
   onEditClick: (device: DeviceConfig) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onNameChange: (name: string) => void;
-  onModeUpdate: (devid: string, mode: string) => void;
+  onModeUpdate: (devid: string, mode: number) => void;
   onHeartbeatUpdate: (devid: string, interval: number) => void;
   onViewLogs: (devid: string) => void;
   onConfigureDevice: (devid: string) => void;
@@ -49,7 +49,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   role,
   editingDevice,
   editName,
-  applicationModes,
   onEditClick,
   onSaveEdit,
   onCancelEdit,
@@ -280,25 +279,25 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                     size="sm"
                     className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
                   >
-                    {device.application_mode || 'Select'}
+                    {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
                     <ChevronDown className="h-3 w-3 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50">
-                  {applicationModes.map((mode) => (
+                  {Object.entries(APPLICATION_MODE_MAP).map(([modeNum, modeLabel]) => (
                     <DropdownMenuItem
-                      key={mode}
-                      onClick={() => onModeUpdate(device.devid, mode)}
+                      key={modeNum}
+                      onClick={() => onModeUpdate(device.devid, parseInt(modeNum))}
                       className="hover:bg-primary/10 cursor-pointer capitalize"
                     >
-                      {mode}
+                      {modeLabel}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <Badge variant="secondary" className="capitalize bg-background/50 backdrop-blur-sm">
-                {device.application_mode}
+                {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
               </Badge>
             )}
           </div>

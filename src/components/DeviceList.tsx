@@ -20,12 +20,20 @@ interface DeviceConfig {
   heartbeat_interval: number;
   sw_version: string;
   hw_version: string;
-  application_mode: string;
+  application_mode: number;
   device_data_updated_at: string;
   last_seen: string;
   created_at: string;
   battery_level: number;
 }
+
+// Application mode mapping
+export const APPLICATION_MODE_MAP: Record<number, string> = {
+  0: 'None',
+  1: 'Cell Tower',
+  2: 'GPS',
+  3: 'WiFi',
+};
 
 interface LocationSensorData {
   id: string;
@@ -150,7 +158,7 @@ const DeviceList = () => {
     }
   };
 
-  const updateDeviceMode = async (devid: string, newMode: string) => {
+  const updateDeviceMode = async (devid: string, newMode: number) => {
     try {
       const { error } = await supabase
         .from('device_config')
@@ -275,8 +283,6 @@ const DeviceList = () => {
     return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
   };
 
-  const applicationModes = ['None', 'GPS', 'WiFi', 'GPS + WiFi', 'WiFi + GPS'];
-
   // Apply filters to devices
   const filteredDevices = useMemo(() => {
     return devices.filter(device => {
@@ -298,7 +304,8 @@ const DeviceList = () => {
 
       // Application mode filter
       if (filters.applicationMode !== 'all') {
-        if (device.application_mode !== filters.applicationMode) return false;
+        const modeNumber = parseInt(filters.applicationMode);
+        if (device.application_mode !== modeNumber) return false;
       }
 
       // Battery filter: only apply when battery is a percentage (0-100)
@@ -317,7 +324,7 @@ const DeviceList = () => {
   }, [devices, filters]);
 
   const availableModes = useMemo(() => {
-    const modes = devices.map(device => device.application_mode).filter(Boolean);
+    const modes = devices.map(device => device.application_mode.toString()).filter(mode => mode !== null && mode !== undefined);
     return [...new Set(modes)];
   }, [devices]);
 
@@ -347,7 +354,6 @@ const DeviceList = () => {
               role={role}
               editingDevice={editingDevice}
               editName={editName}
-              applicationModes={applicationModes}
               onEditClick={handleEditClick}
               onSaveEdit={handleSaveEdit}
               onCancelEdit={handleCancelEdit}
