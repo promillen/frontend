@@ -370,6 +370,8 @@ const DeviceList = () => {
               }}
               getStatusBadge={getStatusBadge}
               getBatteryColor={getBatteryColor}
+              isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
+              isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
             />
           );
         })}
