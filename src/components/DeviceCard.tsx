@@ -9,6 +9,7 @@ import { Battery } from '@/components/ui/battery';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useSensorData } from '@/hooks/useSensorData';
 import { useDataForwarding } from '@/hooks/useDataForwarding';
+import { useLatestLocation } from '@/hooks/useLatestLocation';
 import { APPLICATION_MODE_MAP, SENSOR_TYPE_MAP } from './DeviceList';
 
 interface DeviceConfig {
@@ -69,9 +70,11 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 }) => {
   const { sensorData, loading: sensorLoading } = useSensorData(device.devid, enabledDataTypes);
   const { forwardData, isForwarding } = useDataForwarding();
+  const { location, loading: locationLoading } = useLatestLocation(device.devid);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const canEdit = ['admin', 'moderator', 'developer'].includes(role);
+  const sensorType = device.sensor_type ?? 0;
   
   // Card should be lifted when any of these conditions are true
   const shouldLift = isDropdownOpen || isLogViewerOpen || isConfigDialogOpen;
@@ -220,169 +223,301 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
       </CardHeader>
 
       <CardContent className="relative space-y-3">
-        <div className="grid grid-cols-1 gap-3 text-sm">
-          {role === 'developer' && (
-            <div>
-              <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">HW:</span> {device.hw_version || 'null'}</p>
-              <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">SW:</span> {device.sw_version || 'null'}</p>
-              <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">ICCID:</span> {device.iccid?.trim() || 'null'}</p>
-            </div>
-          )}
-        </div>
+        {/* Developer-specific info - always shown for developers */}
+        {role === 'developer' && (
+          <div className="grid grid-cols-1 gap-1 text-sm pb-3 border-b border-border/30">
+            <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">HW:</span> {device.hw_version || 'null'}</p>
+            <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">SW:</span> {device.sw_version || 'null'}</p>
+            <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">ICCID:</span> {device.iccid?.trim() || 'null'}</p>
+          </div>
+        )}
 
-        {/* Sensor Data Section */}
-        {enabledDataTypes.length > 0 && (
-          <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-sm">Sensor Data</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleForwardData}
-                disabled={isForwarding || Object.keys(sensorData).length === 0}
-                className="h-6 px-2 text-xs"
-              >
-                <Send className="h-3 w-3 mr-1" />
-                Forward
-              </Button>
+        {/* Sensor Type 0: Not Configured */}
+        {sensorType === 0 && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground text-sm mb-3">Device not configured</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onConfigureDevice(device.devid)}
+              className="bg-primary/5 hover:bg-primary/10 border-primary/20"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configure Device
+            </Button>
+          </div>
+        )}
+
+        {/* Sensor Type 1: Tracker */}
+        {sensorType === 1 && (
+          <div className="space-y-3">
+            {/* Tracking Mode */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Tracking mode:</span>
+              {canEdit ? (
+                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                    >
+                      {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                    {Object.entries(APPLICATION_MODE_MAP).map(([modeNum, modeLabel]) => (
+                      <DropdownMenuItem
+                        key={modeNum}
+                        onClick={() => onModeUpdate(device.devid, parseInt(modeNum))}
+                        className="hover:bg-primary/10 cursor-pointer capitalize"
+                      >
+                        {modeLabel}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-muted-foreground capitalize">
+                  {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
+                </span>
+              )}
             </div>
-            {sensorLoading ? (
-              <p className="text-xs text-muted-foreground">Loading sensor data...</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-2">
-                {enabledDataTypes.map(dataType => {
-                  const data = sensorData[dataType];
-                  return (
-                    <div key={dataType} className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1">
-                        <span>{getDataTypeIcon(dataType)}</span>
-                        <span className="font-medium capitalize">
-                          {dataType.replace('_', ' ')}:
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-mono">
-                          {data ? renderSensorValue(dataType, data.data) : 'No data'}
-                        </span>
-                        {data && (
-                          <div className="text-muted-foreground text-xs">
-                            {formatDanishTime(data.created_at)}
-                          </div>
-                        )}
-                      </div>
+
+            {/* Reporting Interval */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Reporting interval:</span>
+              {canEdit ? (
+                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                    >
+                      {hbLabel}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)} className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)} className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)} className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)} className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-muted-foreground">{hbLabel}</span>
+              )}
+            </div>
+
+            {/* Sensor Type */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Sensor type:</span>
+              {canEdit ? (
+                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                    >
+                      {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                    {Object.entries(SENSOR_TYPE_MAP)
+                      .filter(([typeNum]) => typeNum !== '0')
+                      .map(([typeNum, typeLabel]) => (
+                        <DropdownMenuItem
+                          key={typeNum}
+                          onClick={() => onSensorTypeUpdate(device.devid, parseInt(typeNum))}
+                          className="hover:bg-primary/10 cursor-pointer"
+                        >
+                          {typeLabel}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-muted-foreground">
+                  {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                </span>
+              )}
+            </div>
+
+            {/* Location */}
+            <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">📍 Location:</span>
+                {locationLoading ? (
+                  <span className="text-xs text-muted-foreground">Loading...</span>
+                ) : location ? (
+                  <div className="text-right">
+                    <span className="font-mono text-sm">
+                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                    </span>
+                    <div className="text-muted-foreground text-xs">
+                      {formatDanishTime(location.created_at)}
                     </div>
-                  );
-                })}
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">No location data</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sensor Type 2: Soil Sensor */}
+        {sensorType === 2 && (
+          <div className="space-y-3">
+            {/* Location */}
+            <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">📍 Location:</span>
+                {locationLoading ? (
+                  <span className="text-xs text-muted-foreground">Loading...</span>
+                ) : location ? (
+                  <div className="text-right">
+                    <span className="font-mono text-sm">
+                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                    </span>
+                    <div className="text-muted-foreground text-xs">
+                      {formatDanishTime(location.created_at)}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">No location data</span>
+                )}
+              </div>
+            </div>
+
+            {/* Reporting Interval */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Reporting interval:</span>
+              {canEdit ? (
+                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                    >
+                      {hbLabel}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)} className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)} className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)} className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)} className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-muted-foreground">{hbLabel}</span>
+              )}
+            </div>
+
+            {/* Sensor Type */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Sensor type:</span>
+              {canEdit ? (
+                <DropdownMenu onOpenChange={setIsDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
+                    >
+                      {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
+                    {Object.entries(SENSOR_TYPE_MAP)
+                      .filter(([typeNum]) => typeNum !== '0')
+                      .map(([typeNum, typeLabel]) => (
+                        <DropdownMenuItem
+                          key={typeNum}
+                          onClick={() => onSensorTypeUpdate(device.devid, parseInt(typeNum))}
+                          className="hover:bg-primary/10 cursor-pointer"
+                        >
+                          {typeLabel}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <span className="text-muted-foreground">
+                  {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                </span>
+              )}
+            </div>
+
+            {/* Sensor Data */}
+            {enabledDataTypes.length > 0 && (
+              <div className="bg-primary/5 backdrop-blur-sm rounded-lg p-3 border border-primary/10">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-sm">Sensor Data</h4>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleForwardData}
+                      disabled={isForwarding || Object.keys(sensorData).length === 0}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Send className="h-3 w-3 mr-1" />
+                      Forward
+                    </Button>
+                  )}
+                </div>
+                {sensorLoading ? (
+                  <p className="text-xs text-muted-foreground">Loading sensor data...</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {enabledDataTypes.map(dataType => {
+                      const data = sensorData[dataType];
+                      return (
+                        <div key={dataType} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-1">
+                            <span>{getDataTypeIcon(dataType)}</span>
+                            <span className="font-medium capitalize">
+                              {dataType.replace('_', ' ')}:
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-mono">
+                              {data ? renderSensorValue(dataType, data.data) : 'No data'}
+                            </span>
+                            {data && (
+                              <div className="text-muted-foreground text-xs">
+                                {formatDanishTime(data.created_at)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Sensor type:</span>
-
-            {canEdit ? (
-              <DropdownMenu onOpenChange={setIsDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
-                  >
-                    {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
-                    <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                  {Object.entries(SENSOR_TYPE_MAP)
-                    .filter(([typeNum]) => typeNum !== '0') // Exclude "Not Configured" from dropdown
-                    .map(([typeNum, typeLabel]) => (
-                      <DropdownMenuItem
-                        key={typeNum}
-                        onClick={() => onSensorTypeUpdate(device.devid, parseInt(typeNum))}
-                        className="hover:bg-primary/10 cursor-pointer"
-                      >
-                        {typeLabel}
-                      </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Badge variant="secondary" className="bg-background/50 backdrop-blur-sm">
-                {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Tracking mode:</span>
-
-            {canEdit ? (
-              <DropdownMenu onOpenChange={setIsDropdownOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
-                  >
-                    {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
-                    <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                  {Object.entries(APPLICATION_MODE_MAP).map(([modeNum, modeLabel]) => (
-                    <DropdownMenuItem
-                      key={modeNum}
-                      onClick={() => onModeUpdate(device.devid, parseInt(modeNum))}
-                      className="hover:bg-primary/10 cursor-pointer capitalize"
-                    >
-                      {modeLabel}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Badge variant="secondary" className="capitalize bg-background/50 backdrop-blur-sm">
-                {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-foreground">Reporting interval:</span>
-
-            {canEdit ? (
-              <DropdownMenu onOpenChange={(open) => setIsDropdownOpen(open)}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
-                  >
-                    {hbLabel}
-                    <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-
-                {/* Do not include a "null" option */}
-                <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)}    className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)}   className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)}  className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)}  className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <span className="text-muted-foreground">{hbLabel}</span>
-            )}
-          </div>
-        </div>
-
-        {device.last_seen && (
+        {/* Last Seen - shown for all sensor types */}
+        {device.last_seen && sensorType !== 0 && (
           <div className="border-t border-border/30 pt-3">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-foreground">Last Seen:</span>
@@ -391,9 +526,10 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
         )}
 
-        {canEdit && (
+        {/* Action Buttons */}
+        {sensorType !== 0 && (
           <div className="border-t border-border/30 pt-3 space-y-2">
-            {/* Device Configuration Button (Moderator, Admin, and Developer) */}
+            {/* Configure Device Button - shown for all roles except regular users */}
             {canEdit && (
               <Button
                 size="sm"
@@ -406,7 +542,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               </Button>
             )}
 
-            {/* Live Logs Button (Developer only) */}
+            {/* View Device Logs Button - developer only */}
             {role === 'developer' && (
               <Button
                 size="sm"

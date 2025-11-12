@@ -138,6 +138,36 @@ export type Database = {
         }
         Relationships: []
       }
+      locations: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          devid: string
+          id: string
+          latitude: number
+          location_type: string
+          longitude: number
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          devid: string
+          id?: string
+          latitude: number
+          location_type: string
+          longitude: number
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          devid?: string
+          id?: string
+          latitude?: number
+          location_type?: string
+          longitude?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
