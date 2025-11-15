@@ -89,7 +89,9 @@ export type Database = {
       }
       device_config: {
         Row: {
+          apn: string | null
           application_mode: number | null
+          band: number | null
           battery_level: number | null
           created_at: string | null
           device_data_updated_at: string | null
@@ -105,7 +107,9 @@ export type Database = {
           sw_version: string | null
         }
         Insert: {
+          apn?: string | null
           application_mode?: number | null
+          band?: number | null
           battery_level?: number | null
           created_at?: string | null
           device_data_updated_at?: string | null
@@ -121,7 +125,9 @@ export type Database = {
           sw_version?: string | null
         }
         Update: {
+          apn?: string | null
           application_mode?: number | null
+          band?: number | null
           battery_level?: number | null
           created_at?: string | null
           device_data_updated_at?: string | null
