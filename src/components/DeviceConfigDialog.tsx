@@ -183,6 +183,15 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
               </Select>
             </div>
 
+            <div className="flex items-center justify-between py-2">
+              <Label htmlFor="forwarding-enabled">Enable data forwarding</Label>
+              <Switch
+                id="forwarding-enabled"
+                checked={config.forwardingEnabled}
+                onCheckedChange={() => toggleForwarding(deviceId)}
+              />
+            </div>
+
             {/* Conditional fields based on sensor type */}
             {sensorType === 1 && (
               <div className="space-y-2">
@@ -251,86 +260,62 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
             </Card>
           )}
 
-          {/* Data Forwarding Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Send className="h-4 w-4" />
-                Data Forwarding
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="forwarding-enabled">Enable data forwarding</Label>
-                <Switch
-                  id="forwarding-enabled"
-                  checked={config.forwardingEnabled}
-                  onCheckedChange={() => toggleForwarding(deviceId)}
-                />
+          {/* Data Forwarding Endpoints - Show when forwarding is enabled */}
+          {config.forwardingEnabled && (
+            <div className="space-y-3">
+              <Separator />
+              <div>
+                <Label className="text-sm font-medium mb-3 block">
+                  Forwarding Endpoints
+                </Label>
+                {endpoints.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    No endpoints configured. Add endpoints in the Data Forwarding settings.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {endpoints.map(endpoint => (
+                      <div key={endpoint.id} className="flex items-center justify-between p-3 rounded border bg-background/50">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`endpoint-${endpoint.id}`}
+                            checked={config.selectedEndpoints.includes(endpoint.id)}
+                            onCheckedChange={() => toggleEndpoint(deviceId, endpoint.id)}
+                            disabled={!endpoint.enabled}
+                          />
+                          <div>
+                            <Label htmlFor={`endpoint-${endpoint.id}`} className="font-medium">
+                              {endpoint.name}
+                            </Label>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {endpoint.url}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Badge variant={endpoint.enabled ? 'default' : 'secondary'} className="text-xs">
+                            {endpoint.enabled ? 'Active' : 'Disabled'}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {endpoint.method}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {config.forwardingEnabled && (
-                <>
-                  <div className="border-t pt-4">
-                    <Label className="text-sm font-medium mb-3 block">
-                      Select endpoints to forward data to:
-                    </Label>
-                    {endpoints.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">
-                        No endpoints configured. Add endpoints in the Data Forwarding settings.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {endpoints.map(endpoint => (
-                          <div key={endpoint.id} className="flex items-center justify-between p-3 rounded border bg-background/50">
-                            <div className="flex items-center gap-3">
-                              <Checkbox
-                                id={`endpoint-${endpoint.id}`}
-                                checked={config.selectedEndpoints.includes(endpoint.id)}
-                                onCheckedChange={() => toggleEndpoint(deviceId, endpoint.id)}
-                                disabled={!endpoint.enabled}
-                              />
-                              <div>
-                                <Label htmlFor={`endpoint-${endpoint.id}`} className="font-medium">
-                                  {endpoint.name}
-                                </Label>
-                                <p className="text-xs text-muted-foreground font-mono">
-                                  {endpoint.url}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <Badge variant={endpoint.enabled ? 'default' : 'secondary'} className="text-xs">
-                                {endpoint.enabled ? 'Active' : 'Disabled'}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {endpoint.method}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {config.selectedEndpoints.length > 0 && sensorType === 2 && (
-                    <div className="bg-primary/5 rounded-lg p-3">
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Data types to forward:</strong>{' '}
-                        {config.enabledDataTypes.join(', ') || 'None selected'}
-                      </p>
-                    </div>
-                  )}
-                </>
+              {config.selectedEndpoints.length > 0 && sensorType === 2 && (
+                <div className="bg-primary/5 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Data types to forward:</strong>{' '}
+                    {config.enabledDataTypes.join(', ') || 'None selected'}
+                  </p>
+                </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex justify-end pt-4">
-          <Button onClick={onClose} variant="outline">
-            Close
-          </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
