@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -6,16 +6,33 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings, Database, Send } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Settings, Database, Send, Save } from 'lucide-react';
 import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
 import { useDataForwarding } from '@/hooks/useDataForwarding';
 import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 interface DeviceConfigDialogProps {
   deviceId: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
+
+const SENSOR_TYPES = [
+  { value: 0, label: 'Not Configured' },
+  { value: 1, label: 'Tracker' },
+  { value: 2, label: 'Soil Sensor' }
+];
+
+const APPLICATION_MODES = [
+  { value: 0, label: 'Periodic' },
+  { value: 1, label: 'Motion-based' },
+  { value: 2, label: 'On-demand' }
+];
 
 const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
   deviceId,
@@ -25,6 +42,82 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
   const { getDeviceConfig, toggleDataType, toggleEndpoint, toggleForwarding } = useDeviceConfiguration();
   const { endpoints } = useDataForwarding();
   const { availableDataTypes } = useDataTypeSelection();
+  
+  const [deviceName, setDeviceName] = useState('');
+  const [heartbeatInterval, setHeartbeatInterval] = useState<number>(60);
+  const [sensorType, setSensorType] = useState<number>(0);
+  const [applicationMode, setApplicationMode] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch device config from database
+  useEffect(() => {
+    if (!deviceId || !isOpen) return;
+    
+    const fetchDeviceConfig = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('device_config')
+          .select('name, heartbeat_interval, sensor_type, application_mode')
+          .eq('devid', deviceId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setDeviceName(data.name || '');
+          setHeartbeatInterval(data.heartbeat_interval || 60);
+          setSensorType(data.sensor_type || 0);
+          setApplicationMode(data.application_mode || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching device config:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load device configuration',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDeviceConfig();
+  }, [deviceId, isOpen]);
+
+  const handleSaveSettings = async () => {
+    if (!deviceId) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('device_config')
+        .update({
+          name: deviceName || null,
+          heartbeat_interval: heartbeatInterval,
+          sensor_type: sensorType,
+          application_mode: applicationMode
+        })
+        .eq('devid', deviceId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Device settings saved successfully'
+      });
+    } catch (error) {
+      console.error('Error saving device config:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save device settings',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!deviceId) return null;
 
@@ -32,48 +125,139 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            Configure Device: {deviceId}
+            Configure Device
           </DialogTitle>
           <DialogDescription>
-            Choose what data to display and which endpoints to forward data to
+            Configure device settings, data display options, and forwarding endpoints
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Data Display Configuration */}
+          {/* Device Settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Database className="h-4 w-4" />
-                Data Display
+                <Settings className="h-4 w-4" />
+                Device Settings
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {availableDataTypes.map(dataType => (
-                  <div key={dataType} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`display-${dataType}`}
-                      checked={config.enabledDataTypes.includes(dataType)}
-                      onCheckedChange={() => toggleDataType(deviceId, dataType)}
-                    />
-                    <Label htmlFor={`display-${dataType}`} className="text-sm capitalize">
-                      {dataType.replace('_', ' ')}
-                    </Label>
-                  </div>
-                ))}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="device-name">Device Name</Label>
+                <Input
+                  id="device-name"
+                  value={deviceName}
+                  onChange={(e) => setDeviceName(e.target.value)}
+                  placeholder="Enter device name"
+                  disabled={isLoading}
+                />
               </div>
-              {availableDataTypes.length === 0 && (
-                <p className="text-muted-foreground text-sm">
-                  No data types available. Sensor data will appear automatically.
-                </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="heartbeat-interval">Heartbeat Interval (seconds)</Label>
+                <Input
+                  id="heartbeat-interval"
+                  type="number"
+                  value={heartbeatInterval}
+                  onChange={(e) => setHeartbeatInterval(parseInt(e.target.value) || 60)}
+                  min="10"
+                  max="86400"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sensor-type">Sensor Type</Label>
+                <Select 
+                  value={sensorType.toString()} 
+                  onValueChange={(value) => setSensorType(parseInt(value))}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="sensor-type">
+                    <SelectValue placeholder="Select sensor type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SENSOR_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value.toString()}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Conditional fields based on sensor type */}
+              {sensorType === 1 && (
+                <div className="space-y-2">
+                  <Label htmlFor="application-mode">Application Mode</Label>
+                  <Select 
+                    value={applicationMode.toString()} 
+                    onValueChange={(value) => setApplicationMode(parseInt(value))}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="application-mode">
+                      <SelectValue placeholder="Select application mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {APPLICATION_MODES.map(mode => (
+                        <SelectItem key={mode.value} value={mode.value.toString()}>
+                          {mode.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
+
+              <div className="flex justify-end pt-2">
+                <Button 
+                  onClick={handleSaveSettings} 
+                  disabled={isSaving || isLoading}
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {isSaving ? 'Saving...' : 'Save Settings'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
+
+          {/* Data Display Configuration - Only show for Soil Sensor */}
+          {sensorType === 2 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Database className="h-4 w-4" />
+                  Data Points to Display
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {availableDataTypes.map(dataType => (
+                    <div key={dataType} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`display-${dataType}`}
+                        checked={config.enabledDataTypes.includes(dataType)}
+                        onCheckedChange={() => toggleDataType(deviceId, dataType)}
+                      />
+                      <Label htmlFor={`display-${dataType}`} className="text-sm capitalize">
+                        {dataType.replace('_', ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {availableDataTypes.length === 0 && (
+                  <p className="text-muted-foreground text-sm">
+                    No data types available. Sensor data will appear automatically.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Data Forwarding Configuration */}
           <Card>
@@ -137,7 +321,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
                     )}
                   </div>
 
-                  {config.selectedEndpoints.length > 0 && (
+                  {config.selectedEndpoints.length > 0 && sensorType === 2 && (
                     <div className="bg-primary/5 rounded-lg p-3">
                       <p className="text-sm text-muted-foreground">
                         <strong>Data types to forward:</strong>{' '}
@@ -152,8 +336,8 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={onClose}>
-            Done
+          <Button onClick={onClose} variant="outline">
+            Close
           </Button>
         </div>
       </DialogContent>
