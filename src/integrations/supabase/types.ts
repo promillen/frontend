@@ -147,6 +147,8 @@ export type Database = {
           latitude: number
           location_type: string
           longitude: number
+          test_column: Json | null
+          uplink_count: number | null
         }
         Insert: {
           accuracy?: number | null
@@ -156,6 +158,8 @@ export type Database = {
           latitude: number
           location_type: string
           longitude: number
+          test_column?: Json | null
+          uplink_count?: number | null
         }
         Update: {
           accuracy?: number | null
@@ -165,6 +169,8 @@ export type Database = {
           latitude?: number
           location_type?: string
           longitude?: number
+          test_column?: Json | null
+          uplink_count?: number | null
         }
         Relationships: []
       }
