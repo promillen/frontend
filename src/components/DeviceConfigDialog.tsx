@@ -138,93 +138,85 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
 
         <div className="space-y-6">
           {/* Device Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Settings className="h-4 w-4" />
-                Device Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="device-name">Device Name</Label>
-                <Input
-                  id="device-name"
-                  value={deviceName}
-                  onChange={(e) => setDeviceName(e.target.value)}
-                  placeholder="Enter device name"
-                  disabled={isLoading}
-                />
-              </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="device-name">Device Name</Label>
+              <Input
+                id="device-name"
+                value={deviceName}
+                onChange={(e) => setDeviceName(e.target.value)}
+                placeholder="Enter device name"
+                disabled={isLoading}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="heartbeat-interval">Heartbeat Interval (seconds)</Label>
-                <Input
-                  id="heartbeat-interval"
-                  type="number"
-                  value={heartbeatInterval}
-                  onChange={(e) => setHeartbeatInterval(parseInt(e.target.value) || 60)}
-                  min="10"
-                  max="86400"
-                  disabled={isLoading}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="heartbeat-interval">Heartbeat Interval (seconds)</Label>
+              <Input
+                id="heartbeat-interval"
+                type="number"
+                value={heartbeatInterval}
+                onChange={(e) => setHeartbeatInterval(parseInt(e.target.value) || 60)}
+                min="10"
+                max="86400"
+                disabled={isLoading}
+              />
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="sensor-type">Sensor Type</Label>
+              <Select 
+                value={sensorType.toString()} 
+                onValueChange={(value) => setSensorType(parseInt(value))}
+                disabled={isLoading}
+              >
+                <SelectTrigger id="sensor-type">
+                  <SelectValue placeholder="Select sensor type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SENSOR_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value.toString()}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Conditional fields based on sensor type */}
+            {sensorType === 1 && (
               <div className="space-y-2">
-                <Label htmlFor="sensor-type">Sensor Type</Label>
+                <Label htmlFor="application-mode">Application Mode</Label>
                 <Select 
-                  value={sensorType.toString()} 
-                  onValueChange={(value) => setSensorType(parseInt(value))}
+                  value={applicationMode.toString()} 
+                  onValueChange={(value) => setApplicationMode(parseInt(value))}
                   disabled={isLoading}
                 >
-                  <SelectTrigger id="sensor-type">
-                    <SelectValue placeholder="Select sensor type" />
+                  <SelectTrigger id="application-mode">
+                    <SelectValue placeholder="Select application mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SENSOR_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value.toString()}>
-                        {type.label}
+                    {APPLICATION_MODES.map(mode => (
+                      <SelectItem key={mode.value} value={mode.value.toString()}>
+                        {mode.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            )}
 
-              {/* Conditional fields based on sensor type */}
-              {sensorType === 1 && (
-                <div className="space-y-2">
-                  <Label htmlFor="application-mode">Application Mode</Label>
-                  <Select 
-                    value={applicationMode.toString()} 
-                    onValueChange={(value) => setApplicationMode(parseInt(value))}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger id="application-mode">
-                      <SelectValue placeholder="Select application mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {APPLICATION_MODES.map(mode => (
-                        <SelectItem key={mode.value} value={mode.value.toString()}>
-                          {mode.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="flex justify-end pt-2">
-                <Button 
-                  onClick={handleSaveSettings} 
-                  disabled={isSaving || isLoading}
-                  className="gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {isSaving ? 'Saving...' : 'Save Settings'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="flex justify-end pt-2">
+              <Button 
+                onClick={handleSaveSettings} 
+                disabled={isSaving || isLoading}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Saving...' : 'Save Settings'}
+              </Button>
+            </div>
+          </div>
 
           {/* Data Display Configuration - Only show for Soil Sensor */}
           {sensorType === 2 && (
