@@ -23,7 +23,6 @@ interface DeviceConfigDialogProps {
 }
 
 const SENSOR_TYPES = [
-  { value: 0, label: 'Not Configured' },
   { value: 1, label: 'Tracker' },
   { value: 2, label: 'Soil Sensor' }
 ];
