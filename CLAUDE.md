@@ -41,11 +41,14 @@ npm run preview
 
 ### Database Schema
 The application connects to a Supabase database with these core tables:
-- `device_config`: Master device information (devid, name, versions, last_seen)
-- `activity`: Power consumption tracking per uplink message
-- `reboot`: Device restart/crash event logging
-- `sensor_data`: Flexible JSONB storage for various sensor types (WiFi, GPS, temperature)
-- `user_roles`: Role-based access control (admin, moderator, user)
+- `device_config`: Master device information (devid, name, versions, last_seen, battery, temperature, sensor_type)
+- `activity`: Power consumption tracking per uplink message (sleep, modem, GNSS, WiFi durations)
+- `reboot`: Device restart/crash event logging with file/line information
+- `sensor_data`: Flexible JSONB storage for various sensor types
+- `locations`: Dedicated location table with lat/lng coordinates and accuracy
+- `profiles`: User profile information linked to Supabase Auth
+- `user_roles`: Role-based access control (admin, moderator, developer, user)
+- `device_access`: User-to-device access permissions
 
 ### Authentication & Authorization
 - Supabase Auth with email/password
@@ -60,21 +63,22 @@ src/
 ├── pages/
 │   ├── Auth.tsx           # Login/signup page
 │   ├── Dashboard.tsx      # Main app layout with sidebar
-│   └── Index.tsx          # Landing/redirect logic
+│   ├── Index.tsx          # Landing/redirect logic
+│   └── NotFound.tsx       # 404 error page
 ├── components/
 │   ├── DeviceList.tsx     # Device overview table
 │   ├── MapView.tsx        # Leaflet map with device locations
 │   ├── DeviceLogViewer.tsx # Activity/sensor data logs
 │   ├── UserManagement.tsx  # Admin user role management
-│   └── ui/               # shadcn-ui components
+│   └── ui/                # shadcn-ui components
 ├── integrations/supabase/
-│   ├── client.ts         # Supabase client configuration
-│   └── types.ts          # Auto-generated database types
+│   ├── client.ts          # Supabase client configuration
+│   └── types.ts           # Auto-generated database types
 ├── hooks/
-│   ├── useAuth.tsx       # Authentication logic
-│   └── useUserRole.tsx   # Role checking utilities
+│   ├── useAuth.tsx        # Authentication logic
+│   └── useUserRole.tsx    # Role checking utilities
 └── contexts/
-    └── LayoutContext.tsx # Sidebar state management
+    └── LayoutContext.tsx  # Sidebar state management
 ```
 
 ### Routing Structure
@@ -98,11 +102,14 @@ src/
 
 ## Database Integration Notes
 
-The frontend expects specific database table structures as defined in the README.md schema:
+The frontend expects specific database table structures as defined in `public.sql`:
 - Device identification via `devid` string primary key
-- Power metrics in separate columns (sleep, modem, gnss, wifi, other)
+- All tables use UUID primary keys (except device_config which uses devid)
+- Power metrics stored as integers representing seconds (sleep, modem, gnss, wifi, other)
 - Sensor data stored as JSONB with `data_type` field for filtering
+- Location data in dedicated `locations` table with lat/lng coordinates
 - Automatic `last_seen` updates via database triggers
+- Row Level Security (RLS) policies enforce role-based access
 
 ## Development Tips
 
