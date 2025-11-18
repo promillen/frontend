@@ -37,7 +37,8 @@ export function useDeviceSelection() {
     };
 
     fetchAllDevices();
-  }, [selectedDevices.length, setSelectedDevicesStorage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setSelectedDevices = (devices: string[] | ((prev: string[]) => string[])) => {
     setSelectedDevicesStorage(devices);

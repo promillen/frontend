@@ -93,6 +93,7 @@ export type Database = {
           band: number | null
           battery_level: number | null
           created_at: string | null
+          description: string | null
           device_data_updated_at: string | null
           devid: string
           heartbeat_interval: number | null
@@ -111,6 +112,7 @@ export type Database = {
           band?: number | null
           battery_level?: number | null
           created_at?: string | null
+          description?: string | null
           device_data_updated_at?: string | null
           devid: string
           heartbeat_interval?: number | null
@@ -129,6 +131,7 @@ export type Database = {
           band?: number | null
           battery_level?: number | null
           created_at?: string | null
+          description?: string | null
           device_data_updated_at?: string | null
           devid?: string
           heartbeat_interval?: number | null
