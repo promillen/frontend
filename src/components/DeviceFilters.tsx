@@ -8,7 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus } from 'lucide-react';
-import { APPLICATION_MODE_MAP } from './DeviceList';
+
+const LOCATION_MODE_MAP: Record<number, string> = {
+  0: 'None',
+  1: 'Cell Tower',
+  2: 'GNSS',
+  3: 'WiFi'
+};
 
 export interface DeviceFilters {
   search: string;
@@ -148,7 +154,7 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                       <SelectItem value="all">All modes</SelectItem>
                       {availableModes.map(mode => (
                         <SelectItem key={mode} value={mode}>
-                          {APPLICATION_MODE_MAP[parseInt(mode)] || mode}
+                          {LOCATION_MODE_MAP[parseInt(mode)] || mode}
                         </SelectItem>
                       ))}
                     </SelectContent>

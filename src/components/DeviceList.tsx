@@ -20,7 +20,7 @@ interface DeviceConfig {
   heartbeat_interval: number;
   sw_version: string;
   hw_version: string;
-  application_mode: number;
+  location_mode: number;
   sensor_type: number;
   device_data_updated_at: string;
   last_seen: string;
@@ -170,7 +170,7 @@ const DeviceList = () => {
     try {
       const { error } = await supabase
         .from('device_config')
-        .update({ application_mode: newMode })
+        .update({ location_mode: newMode })
         .eq('devid', devid);
 
       if (error) {
@@ -343,10 +343,10 @@ const DeviceList = () => {
         if (status !== filters.status) return false;
       }
 
-      // Application mode filter
+      // Location mode filter
       if (filters.applicationMode !== 'all') {
         const modeNumber = parseInt(filters.applicationMode);
-        if (device.application_mode !== modeNumber) return false;
+        if (device.location_mode !== modeNumber) return false;
       }
 
       // Battery filter: only apply when battery is a percentage (0-100)
@@ -365,7 +365,7 @@ const DeviceList = () => {
   }, [devices, filters]);
 
   const availableModes = useMemo(() => {
-    const modes = devices.map(device => device.application_mode.toString()).filter(mode => mode !== null && mode !== undefined);
+    const modes = devices.map(device => device.location_mode.toString()).filter(mode => mode !== null && mode !== undefined);
     return [...new Set(modes)];
   }, [devices]);
 
