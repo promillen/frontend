@@ -90,7 +90,6 @@ export type Database = {
       device_config: {
         Row: {
           apn: string | null
-          application_mode: number | null
           band: number | null
           battery_level: number | null
           created_at: string | null
@@ -102,13 +101,13 @@ export type Database = {
           internal_temperature: number | null
           last_seen: string | null
           last_uplink_count: number | null
+          location_mode: number | null
           name: string | null
           sensor_type: number | null
           sw_version: string | null
         }
         Insert: {
           apn?: string | null
-          application_mode?: number | null
           band?: number | null
           battery_level?: number | null
           created_at?: string | null
@@ -120,13 +119,13 @@ export type Database = {
           internal_temperature?: number | null
           last_seen?: string | null
           last_uplink_count?: number | null
+          location_mode?: number | null
           name?: string | null
           sensor_type?: number | null
           sw_version?: string | null
         }
         Update: {
           apn?: string | null
-          application_mode?: number | null
           band?: number | null
           battery_level?: number | null
           created_at?: string | null
@@ -138,6 +137,7 @@ export type Database = {
           internal_temperature?: number | null
           last_seen?: string | null
           last_uplink_count?: number | null
+          location_mode?: number | null
           name?: string | null
           sensor_type?: number | null
           sw_version?: string | null

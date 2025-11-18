@@ -27,10 +27,11 @@ const SENSOR_TYPES = [
   { value: 2, label: 'Soil Sensor' }
 ];
 
-const APPLICATION_MODES = [
-  { value: 0, label: 'Periodic' },
-  { value: 1, label: 'Motion-based' },
-  { value: 2, label: 'On-demand' }
+const LOCATION_MODES = [
+  { value: 0, label: 'None' },
+  { value: 1, label: 'Cell Tower' },
+  { value: 2, label: 'GNSS' },
+  { value: 3, label: 'WiFi' }
 ];
 
 const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
@@ -45,7 +46,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
   const [deviceName, setDeviceName] = useState('');
   const [heartbeatInterval, setHeartbeatInterval] = useState<number>(60);
   const [sensorType, setSensorType] = useState<number>(0);
-  const [applicationMode, setApplicationMode] = useState<number>(0);
+  const [locationMode, setLocationMode] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -58,7 +59,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
       try {
         const { data, error } = await supabase
           .from('device_config')
-          .select('name, heartbeat_interval, sensor_type, application_mode')
+          .select('name, heartbeat_interval, sensor_type, location_mode')
           .eq('devid', deviceId)
           .single();
 
@@ -68,7 +69,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
           setDeviceName(data.name || '');
           setHeartbeatInterval(data.heartbeat_interval || 60);
           setSensorType(data.sensor_type || 0);
-          setApplicationMode(data.application_mode || 0);
+          setLocationMode(data.location_mode || 0);
         }
       } catch (error) {
         console.error('Error fetching device config:', error);
@@ -96,7 +97,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
           name: deviceName || null,
           heartbeat_interval: heartbeatInterval,
           sensor_type: sensorType,
-          application_mode: applicationMode
+          location_mode: locationMode
         })
         .eq('devid', deviceId);
 
@@ -194,17 +195,17 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
             {/* Conditional fields based on sensor type */}
             {sensorType === 1 && (
               <div className="space-y-2">
-                <Label htmlFor="application-mode">Application Mode</Label>
+                <Label htmlFor="location-mode">Location Mode</Label>
                 <Select 
-                  value={applicationMode.toString()} 
-                  onValueChange={(value) => setApplicationMode(parseInt(value))}
+                  value={locationMode.toString()} 
+                  onValueChange={(value) => setLocationMode(parseInt(value))}
                   disabled={isLoading}
                 >
-                  <SelectTrigger id="application-mode">
-                    <SelectValue placeholder="Select application mode" />
+                  <SelectTrigger id="location-mode">
+                    <SelectValue placeholder="Select location mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    {APPLICATION_MODES.map(mode => (
+                    {LOCATION_MODES.map(mode => (
                       <SelectItem key={mode.value} value={mode.value.toString()}>
                         {mode.label}
                       </SelectItem>

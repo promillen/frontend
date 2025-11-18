@@ -26,7 +26,7 @@ async function hmacSha256Hex(secret: string, data: Uint8Array): Promise<string> 
     false,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, data);
+  const sig = await crypto.subtle.sign("HMAC", key, data.buffer as ArrayBuffer);
   return Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -126,10 +126,12 @@ serve(async (req) => {
     const expected = await hmacSha256Hex(FLY_INGEST_SECRET, bodyBytes);
     const providedBytes = hexToBytes(sigHeader);
     const expectedBytes = hexToBytes(expected);
-    const valid = providedBytes.length === expectedBytes.length && crypto.subtle.timingSafeEqual ?
-      // @ts-ignore timingSafeEqual available in Deno deploy
-      crypto.subtle.timingSafeEqual(providedBytes, expectedBytes) :
-      providedBytes.every((b, i) => b === expectedBytes[i]);
+    // @ts-ignore timingSafeEqual available in Deno deploy
+    const valid = providedBytes.length === expectedBytes.length && (
+      typeof crypto.subtle.timingSafeEqual === 'function'
+        ? crypto.subtle.timingSafeEqual(providedBytes, expectedBytes)
+        : providedBytes.every((b, i) => b === expectedBytes[i])
+    );
 
     if (!valid) {
       console.warn("Invalid signature");
@@ -161,6 +163,14 @@ serve(async (req) => {
 
     const inputsHash = await computeInputsHash({ wlan, cell, gnss });
     const ts = typeof payload.timestamp === "number" ? new Date(payload.timestamp * 1000).toISOString() : new Date().toISOString();
+
+    // Ensure fix is not null before using
+    if (!fix) {
+      return new Response(JSON.stringify({ error: "Failed to determine location" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 

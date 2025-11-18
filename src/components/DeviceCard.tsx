@@ -10,7 +10,19 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { useSensorData } from '@/hooks/useSensorData';
 import { useDataForwarding } from '@/hooks/useDataForwarding';
 import { useLatestLocation } from '@/hooks/useLatestLocation';
-import { APPLICATION_MODE_MAP, SENSOR_TYPE_MAP } from './DeviceList';
+
+const LOCATION_MODE_MAP: Record<number, string> = {
+  0: 'None',
+  1: 'Cell Tower',
+  2: 'GNSS',
+  3: 'WiFi'
+};
+
+const SENSOR_TYPE_MAP: Record<number, string> = {
+  0: 'Not configured',
+  1: 'Tracker',
+  2: 'Soil Sensor'
+};
 
 interface DeviceConfig {
   devid: string;
@@ -19,7 +31,7 @@ interface DeviceConfig {
   heartbeat_interval: number;
   sw_version: string;
   hw_version: string;
-  application_mode: number;
+  location_mode: number;
   sensor_type: number;
   device_data_updated_at: string;
   last_seen: string;
@@ -262,12 +274,12 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                       size="sm"
                       className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
                     >
-                      {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
+                      {LOCATION_MODE_MAP[device.location_mode] || 'Unknown'}
                       <ChevronDown className="h-3 w-3 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                    {Object.entries(APPLICATION_MODE_MAP).map(([modeNum, modeLabel]) => (
+                    {Object.entries(LOCATION_MODE_MAP).map(([modeNum, modeLabel]) => (
                       <DropdownMenuItem
                         key={modeNum}
                         onClick={() => onModeUpdate(device.devid, parseInt(modeNum))}
@@ -280,7 +292,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 </DropdownMenu>
               ) : (
                 <span className="text-muted-foreground capitalize">
-                  {APPLICATION_MODE_MAP[device.application_mode] || 'Unknown'}
+                  {LOCATION_MODE_MAP[device.location_mode] || 'Unknown'}
                 </span>
               )}
             </div>
