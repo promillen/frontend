@@ -421,7 +421,7 @@ class DataResource(resource.Resource):
             })
 
             downlink = downlink_pb2.Downlink()
-            downlink.config.heartbeat_interval = 720
+            downlink.config.heartbeat_interval = 1100
             # Explicitly use the new protobuf enum mapping: 0=NONE, 1=GNSS, 2=WIFI
             downlink.config.location_mode = 2
             payload = downlink.SerializeToString()
