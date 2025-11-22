@@ -420,10 +420,10 @@ class DataResource(resource.Resource):
                 "wifi": wifi_list if wifi_list else None
             })
 
-            # Optional downlink
             downlink = downlink_pb2.Downlink()
             downlink.config.heartbeat_interval = 720
-            downlink.config.location_mode = downlink_pb2.LocationMode.WIFI
+            # Explicitly use the new protobuf enum mapping: 0=NONE, 1=GNSS, 2=WIFI
+            downlink.config.location_mode = 2
             payload = downlink.SerializeToString()
 
             return aiocoap.Message(
