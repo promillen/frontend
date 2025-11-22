@@ -153,9 +153,9 @@ export type Database = {
           created_at: string
           devid: string
           id: string
-          latitude: number
+          latitude: number | null
           location_type: string
-          longitude: number
+          longitude: number | null
           test_column: Json | null
           uplink_count: number | null
         }
@@ -164,9 +164,9 @@ export type Database = {
           created_at?: string
           devid: string
           id?: string
-          latitude: number
+          latitude?: number | null
           location_type: string
-          longitude: number
+          longitude?: number | null
           test_column?: Json | null
           uplink_count?: number | null
         }
@@ -175,9 +175,9 @@ export type Database = {
           created_at?: string
           devid?: string
           id?: string
-          latitude?: number
+          latitude?: number | null
           location_type?: string
-          longitude?: number
+          longitude?: number | null
           test_column?: Json | null
           uplink_count?: number | null
         }

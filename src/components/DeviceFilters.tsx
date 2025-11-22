@@ -11,9 +11,8 @@ import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus } from 'lucide-react
 
 const LOCATION_MODE_MAP: Record<number, string> = {
   0: 'None',
-  1: 'Cell Tower',
-  2: 'GNSS',
-  3: 'WiFi'
+  1: 'GNSS',
+  2: 'WiFi'
 };
 
 export interface DeviceFilters {

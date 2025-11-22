@@ -29,9 +29,8 @@ const SENSOR_TYPES = [
 
 const LOCATION_MODES = [
   { value: 0, label: 'None' },
-  { value: 1, label: 'Cell Tower' },
-  { value: 2, label: 'GNSS' },
-  { value: 3, label: 'WiFi' }
+  { value: 1, label: 'GNSS' },
+  { value: 2, label: 'WiFi' }
 ];
 
 const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
