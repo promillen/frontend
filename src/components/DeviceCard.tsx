@@ -368,7 +368,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 <span className="font-medium text-sm">📍 Location:</span>
                 {locationLoading ? (
                   <span className="text-xs text-muted-foreground">Loading...</span>
-                ) : location ? (
+                ) : location && location.latitude !== null && location.longitude !== null ? (
                   <div className="text-right">
                     <span className="font-mono text-sm">
                       {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
@@ -394,7 +394,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 <span className="font-medium text-sm">📍 Location:</span>
                 {locationLoading ? (
                   <span className="text-xs text-muted-foreground">Loading...</span>
-                ) : location ? (
+                ) : location && location.latitude !== null && location.longitude !== null ? (
                   <div className="text-right">
                     <span className="font-mono text-sm">
                       {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
