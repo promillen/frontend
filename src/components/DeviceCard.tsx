@@ -13,9 +13,8 @@ import { useLatestLocation } from '@/hooks/useLatestLocation';
 
 const LOCATION_MODE_MAP: Record<number, string> = {
   0: 'None',
-  1: 'Cell Tower',
-  2: 'GNSS',
-  3: 'WiFi'
+  1: 'GNSS',
+  2: 'WiFi'
 };
 
 const SENSOR_TYPE_MAP: Record<number, string> = {
