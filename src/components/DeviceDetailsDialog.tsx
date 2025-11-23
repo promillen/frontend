@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -138,20 +132,18 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
               <Info className="h-5 w-5" />
               Device Details
             </DialogTitle>
-            <DialogDescription>
-              Hardware and software information for {device.name || device.devid}
-            </DialogDescription>
+            <DialogDescription>Hardware and software information for {device.name || device.devid}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
             {/* Editable Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Device Name</label>
+              <label className="text-sm font-medium text-muted-foreground">Device Name2</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={!canEdit}
-                placeholder="Enter device name"
+                placeholder="Enter device name2"
                 className="text-sm"
               />
             </div>
@@ -301,11 +293,7 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
 
             {/* Save Button */}
             {canEdit && (
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="w-full"
-              >
+              <Button onClick={handleSave} disabled={isSaving} className="w-full">
                 <Save className="h-4 w-4 mr-2" />
                 {isSaving ? "Saving..." : "Save Changes"}
               </Button>
