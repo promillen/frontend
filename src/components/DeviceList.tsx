@@ -1,16 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { useUserRole } from "@/hooks/useUserRole";
-import { formatInTimeZone } from "date-fns-tz";
-import DeviceFiltersComponent, { DeviceFilters } from "./DeviceFilters";
-import LoadingSkeleton from "./LoadingSkeleton";
-import ErrorBoundary from "./ErrorBoundary";
-import DeviceCard from "./DeviceCard";
-import DeviceLogViewer from "./DeviceLogViewer";
-import { useDeviceConfiguration } from "@/hooks/useDeviceConfiguration";
-import { useDataTypeSelection } from "@/hooks/useDataTypeSelection";
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
+import { formatInTimeZone } from 'date-fns-tz';
+import DeviceFiltersComponent, { DeviceFilters } from './DeviceFilters';
+import LoadingSkeleton from './LoadingSkeleton';
+import ErrorBoundary from './ErrorBoundary';
+import DeviceCard from './DeviceCard';
+import DeviceLogViewer from './DeviceLogViewer';
+import DeviceConfigDialog from './DeviceConfigDialog';
+import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
+import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
 
 interface DeviceConfig {
   devid: string;
@@ -33,17 +34,17 @@ interface DeviceConfig {
 
 // Application mode mapping
 export const APPLICATION_MODE_MAP: Record<number, string> = {
-  0: "None",
-  1: "Cell Tower",
-  2: "GPS",
-  3: "WiFi",
+  0: 'None',
+  1: 'Cell Tower',
+  2: 'GPS',
+  3: 'WiFi',
 };
 
 // Sensor type mapping
 export const SENSOR_TYPE_MAP: Record<number, string> = {
-  0: "Not Configured",
-  1: "Tracker",
-  2: "Soil Sensor",
+  0: 'Not Configured',
+  1: 'Tracker',
+  2: 'Soil Sensor',
 };
 
 interface LocationSensorData {
@@ -59,11 +60,11 @@ const DeviceList = () => {
   const [deviceLocations, setDeviceLocations] = useState<{ [key: string]: LocationSensorData }>({});
   const [loading, setLoading] = useState(true);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
+  const [editName, setEditName] = useState('');
   const [filters, setFilters] = useState<DeviceFilters>({
-    search: "",
-    status: "all",
-    applicationMode: "all",
+    search: '',
+    status: 'all',
+    applicationMode: 'all',
     batteryRange: [0, 100],
     dateRange: {},
   });
@@ -79,12 +80,12 @@ const DeviceList = () => {
   const fetchDevices = async () => {
     try {
       const { data, error } = await supabase
-        .from("device_config")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from('device_config')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error("Error fetching devices:", error);
+        console.error('Error fetching devices:', error);
         toast({
           title: "Error",
           description: "Failed to fetch devices",
@@ -99,32 +100,29 @@ const DeviceList = () => {
       if (data && data.length > 0) {
         const locationPromises = data.map(async (device) => {
           const { data: locationData } = await supabase
-            .from("sensor_data")
-            .select("*")
-            .eq("devid", device.devid)
-            .eq("data_type", "location")
-            .order("created_at", { ascending: false })
+            .from('sensor_data')
+            .select('*')
+            .eq('devid', device.devid)
+            .eq('data_type', 'location')
+            .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
-
+          
           return { deviceId: device.devid, location: locationData };
         });
 
         const locations = await Promise.all(locationPromises);
-        const locationMap = locations.reduce(
-          (acc, { deviceId, location }) => {
-            if (location) {
-              acc[deviceId] = location;
-            }
-            return acc;
-          },
-          {} as { [key: string]: LocationSensorData },
-        );
+        const locationMap = locations.reduce((acc, { deviceId, location }) => {
+          if (location) {
+            acc[deviceId] = location;
+          }
+          return acc;
+        }, {} as { [key: string]: LocationSensorData });
 
         setDeviceLocations(locationMap);
       }
     } catch (error) {
-      console.error("Error fetching devices:", error);
+      console.error('Error fetching devices:', error);
       toast({
         title: "Error",
         description: "Failed to fetch devices",
@@ -141,7 +139,10 @@ const DeviceList = () => {
 
   const updateDeviceName = async (devid: string, newName: string) => {
     try {
-      const { error } = await supabase.from("device_config").update({ name: newName }).eq("devid", devid);
+      const { error } = await supabase
+        .from('device_config')
+        .update({ name: newName })
+        .eq('devid', devid);
 
       if (error) {
         toast({
@@ -152,8 +153,10 @@ const DeviceList = () => {
         return;
       }
 
-      setDevices((prev) => prev.map((device) => (device.devid === devid ? { ...device, name: newName } : device)));
-
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, name: newName } : device
+      ));
+      
       toast({
         title: "Success",
         description: "Device name updated successfully",
@@ -169,7 +172,10 @@ const DeviceList = () => {
 
   const updateDeviceMode = async (devid: string, newMode: number) => {
     try {
-      const { error } = await supabase.from("device_config").update({ location_mode: newMode }).eq("devid", devid);
+      const { error } = await supabase
+        .from('device_config')
+        .update({ location_mode: newMode })
+        .eq('devid', devid);
 
       if (error) {
         toast({
@@ -180,10 +186,10 @@ const DeviceList = () => {
         return;
       }
 
-      setDevices((prev) =>
-        prev.map((device) => (device.devid === devid ? { ...device, application_mode: newMode } : device)),
-      );
-
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, application_mode: newMode } : device
+      ));
+      
       toast({
         title: "Success",
         description: "Device mode updated successfully",
@@ -200,9 +206,9 @@ const DeviceList = () => {
   const updateHeartbeatInterval = async (devid: string, interval: number) => {
     try {
       const { error } = await supabase
-        .from("device_config")
+        .from('device_config')
         .update({ heartbeat_interval: interval })
-        .eq("devid", devid);
+        .eq('devid', devid);
 
       if (error) {
         toast({
@@ -213,10 +219,10 @@ const DeviceList = () => {
         return;
       }
 
-      setDevices((prev) =>
-        prev.map((device) => (device.devid === devid ? { ...device, heartbeat_interval: interval } : device)),
-      );
-
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, heartbeat_interval: interval } : device
+      ));
+      
       toast({
         title: "Success",
         description: "Reporting interval updated successfully",
@@ -232,7 +238,10 @@ const DeviceList = () => {
 
   const updateSensorType = async (devid: string, sensorType: number) => {
     try {
-      const { error } = await supabase.from("device_config").update({ sensor_type: sensorType }).eq("devid", devid);
+      const { error } = await supabase
+        .from('device_config')
+        .update({ sensor_type: sensorType })
+        .eq('devid', devid);
 
       if (error) {
         toast({
@@ -243,10 +252,10 @@ const DeviceList = () => {
         return;
       }
 
-      setDevices((prev) =>
-        prev.map((device) => (device.devid === devid ? { ...device, sensor_type: sensorType } : device)),
-      );
-
+      setDevices(prev => prev.map(device => 
+        device.devid === devid ? { ...device, sensor_type: sensorType } : device
+      ));
+      
       toast({
         title: "Success",
         description: "Sensor type updated successfully",
@@ -269,74 +278,63 @@ const DeviceList = () => {
     if (editingDevice && editName.trim()) {
       await updateDeviceName(editingDevice, editName.trim());
       setEditingDevice(null);
-      setEditName("");
+      setEditName('');
     }
   };
 
   const handleCancelEdit = () => {
     setEditingDevice(null);
-    setEditName("");
+    setEditName('');
   };
 
   const getBatteryColor = (level: number) => {
-    if (level >= 60) return "text-green-500";
-    if (level >= 30) return "text-yellow-500";
-    return "text-red-500";
+    if (level >= 60) return 'text-green-500';
+    if (level >= 30) return 'text-yellow-500';
+    return 'text-red-500';
   };
 
-  const getDeviceStatus = (
-    lastSeen: string | null,
-    heartbeatSeconds: number | null,
-  ): "online" | "warning" | "offline" => {
+  const getDeviceStatus = (lastSeen: string | null, heartbeatSeconds: number | null): 'online' | 'warning' | 'offline' => {
     // Guard clause: if either value is missing, mark as offline
-    if (!lastSeen || !heartbeatSeconds) return "offline";
+    if (!lastSeen || !heartbeatSeconds) return 'offline';
 
     const lastUpdate = new Date(lastSeen);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
     const heartbeatMinutes = heartbeatSeconds / 60;
 
-    if (diffMinutes <= heartbeatMinutes) return "online";
-    if (diffMinutes <= heartbeatMinutes * 2) return "warning";
-    return "offline";
+    if (diffMinutes <= heartbeatMinutes) return 'online';
+    if (diffMinutes <= heartbeatMinutes * 2) return 'warning';
+    return 'offline';
   };
 
   const getStatusBadge = (deviceId: string) => {
-    const device = devices.find((d) => d.devid === deviceId);
+    const device = devices.find(d => d.devid === deviceId);
     if (!device?.last_seen) {
       return <Badge variant="secondary">No Data</Badge>;
     }
 
     const status = getDeviceStatus(device.last_seen, device.heartbeat_interval);
-
-    if (status === "online") {
-      return (
-        <Badge variant="default" className="bg-green-500">
-          Online
-        </Badge>
-      );
-    } else if (status === "warning") {
-      return (
-        <Badge variant="secondary" className="bg-yellow-500">
-          Warning
-        </Badge>
-      );
+    
+    if (status === 'online') {
+      return <Badge variant="default" className="bg-green-500">Online</Badge>;
+    } else if (status === 'warning') {
+      return <Badge variant="secondary" className="bg-yellow-500">Warning</Badge>;
     } else {
       return <Badge variant="destructive">Offline</Badge>;
     }
   };
 
   const formatDanishTime = (dateString: string) => {
-    return formatInTimeZone(new Date(dateString), "Europe/Copenhagen", "dd/MM/yyyy HH:mm:ss");
+    return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
   };
 
   // Apply filters to devices
   const filteredDevices = useMemo(() => {
-    return devices.filter((device) => {
+    return devices.filter(device => {
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        const matchesSearch =
+        const matchesSearch = 
           device.name?.toLowerCase().includes(searchLower) ||
           device.devid.toLowerCase().includes(searchLower) ||
           device.iccid?.toLowerCase().includes(searchLower);
@@ -344,13 +342,13 @@ const DeviceList = () => {
       }
 
       // Status filter
-      if (filters.status !== "all") {
+      if (filters.status !== 'all') {
         const status = getDeviceStatus(device.last_seen, device.heartbeat_interval);
         if (status !== filters.status) return false;
       }
 
       // Location mode filter
-      if (filters.applicationMode !== "all") {
+      if (filters.applicationMode !== 'all') {
         const modeNumber = parseInt(filters.applicationMode);
         if (device.location_mode !== modeNumber) return false;
       }
@@ -371,9 +369,7 @@ const DeviceList = () => {
   }, [devices, filters]);
 
   const availableModes = useMemo(() => {
-    const modes = devices
-      .map((device) => device.location_mode.toString())
-      .filter((mode) => mode !== null && mode !== undefined);
+    const modes = devices.map(device => device.location_mode.toString()).filter(mode => mode !== null && mode !== undefined);
     return [...new Set(modes)];
   }, [devices]);
 
@@ -389,57 +385,67 @@ const DeviceList = () => {
           onFiltersChange={setFilters}
           availableModes={availableModes}
           onRefresh={fetchDevices}
-          canAddDevice={role === "admin" || role === "moderator" || role === "developer"}
+          canAddDevice={role === 'admin' || role === 'moderator' || role === 'developer'}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDevices.map((device) => {
-            const deviceConfig = getDeviceConfig(device.devid);
-            return (
-              <DeviceCard
-                key={device.devid}
-                device={device}
-                enabledDataTypes={deviceConfig.enabledDataTypes}
-                role={role}
-                editingDevice={editingDevice}
-                editName={editName}
-                onEditClick={handleEditClick}
-                onSaveEdit={handleSaveEdit}
-                onCancelEdit={handleCancelEdit}
-                onNameChange={setEditName}
-                onModeUpdate={updateDeviceMode}
-                onHeartbeatUpdate={updateHeartbeatInterval}
-                onSensorTypeUpdate={updateSensorType}
-                onViewLogs={(devid) => {
-                  setSelectedDeviceForLogs(devid);
-                  setIsLogViewerOpen(true);
-                }}
-                onConfigureDevice={(devid) => {
-                  setSelectedDeviceForConfig(devid);
-                  setIsConfigDialogOpen(true);
-                }}
-                getStatusBadge={getStatusBadge}
-                getBatteryColor={getBatteryColor}
-                isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
-                isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
-                onDeviceUpdate={fetchDevices}
-              />
-            );
-          })}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredDevices.map((device) => {
+          const deviceConfig = getDeviceConfig(device.devid);
+          return (
+            <DeviceCard
+              key={device.devid}
+              device={device}
+              enabledDataTypes={deviceConfig.enabledDataTypes}
+              role={role}
+              editingDevice={editingDevice}
+              editName={editName}
+              onEditClick={handleEditClick}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              onNameChange={setEditName}
+              onModeUpdate={updateDeviceMode}
+              onHeartbeatUpdate={updateHeartbeatInterval}
+              onSensorTypeUpdate={updateSensorType}
+              onViewLogs={(devid) => {
+                setSelectedDeviceForLogs(devid);
+                setIsLogViewerOpen(true);
+              }}
+              onConfigureDevice={(devid) => {
+                setSelectedDeviceForConfig(devid);
+                setIsConfigDialogOpen(true);
+              }}
+              getStatusBadge={getStatusBadge}
+              getBatteryColor={getBatteryColor}
+              isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
+              isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
+              onDeviceUpdate={fetchDevices}
+            />
+          );
+        })}
+      </div>
+
+      {filteredDevices.length === 0 && devices.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">No devices found matching your search.</p>
         </div>
+      )}
 
-        {filteredDevices.length === 0 && devices.length > 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No devices found matching your search.</p>
-          </div>
-        )}
-
-        {devices.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No devices found. Add your first device to get started.</p>
-          </div>
-        )}
-
+       {devices.length === 0 && (
+         <div className="text-center py-8">
+           <p className="text-gray-500">No devices found. Add your first device to get started.</p>
+         </div>
+       )}
+        
+        {/* Device Configuration Dialog */}
+        <DeviceConfigDialog
+          deviceId={selectedDeviceForConfig}
+          isOpen={isConfigDialogOpen}
+          onClose={() => {
+            setIsConfigDialogOpen(false);
+            setSelectedDeviceForConfig(null);
+          }}
+        />
+        
         {/* Device Log Viewer */}
         <DeviceLogViewer
           deviceId={selectedDeviceForLogs}
