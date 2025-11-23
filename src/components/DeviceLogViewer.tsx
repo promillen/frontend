@@ -46,14 +46,17 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
       groups.get(key)!.push(log);
     });
     
-    // Sort groups by most recent first
+    // Sort each group's logs by timestamp (newest first within each group)
+    groups.forEach((groupLogs) => {
+      groupLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    });
+    
+    // Sort groups by the most recent timestamp in each group (newest group first)
     return Array.from(groups.entries())
-      .sort(([a], [b]) => {
-        if (a === 'no_uplink') return 1;
-        if (b === 'no_uplink') return -1;
-        const aNum = parseInt(a.split('_')[1]);
-        const bNum = parseInt(b.split('_')[1]);
-        return bNum - aNum;
+      .sort(([keyA, logsA], [keyB, logsB]) => {
+        const latestA = logsA[0]?.timestamp ? new Date(logsA[0].timestamp).getTime() : 0;
+        const latestB = logsB[0]?.timestamp ? new Date(logsB[0].timestamp).getTime() : 0;
+        return latestB - latestA;
       });
   };
 
@@ -64,7 +67,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }}>
-      <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card backdrop-blur-sm shadow-2xl border-2">
+      <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card shadow-2xl border-2">
         <CardHeader className="pb-3 border-b">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -118,7 +121,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                         <CollapsibleTrigger asChild>
                           <Button 
                             variant="ghost" 
-                            className="w-full justify-between p-4 h-auto bg-muted/20 hover:bg-muted/30 border rounded-lg"
+                            className="w-full justify-between p-4 h-auto bg-muted/20 hover:bg-muted/30 border rounded-lg transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
@@ -143,9 +146,9 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                             </span>
                           </Button>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-3 ml-4 border-l-2 border-muted pl-4 animate-accordion-down data-[state=closed]:animate-accordion-up">
+                        <CollapsibleContent className="space-y-3 ml-4 border-l-2 border-muted pl-4">
                           {groupLogs.map((log, index) => (
-                            <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-card/70 transition-colors">
+                            <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-muted/10 transition-colors">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <Badge variant={getLogTypeColor(log.type)} className="text-xs font-medium">
