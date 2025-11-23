@@ -42,6 +42,10 @@ interface DeviceConfig {
   last_seen: string;
   created_at: string;
   battery_level: number;
+  apn: string | null;
+  band: number | null;
+  description: string | null;
+  internal_temperature: number | null;
 }
 
 interface DeviceCardProps {
@@ -63,6 +67,7 @@ interface DeviceCardProps {
   getBatteryColor: (level: number) => string;
   isLogViewerOpen: boolean;
   isConfigDialogOpen: boolean;
+  onDeviceUpdate: () => void;
 }
 
 const DeviceCard: React.FC<DeviceCardProps> = ({
@@ -84,6 +89,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   getBatteryColor,
   isLogViewerOpen,
   isConfigDialogOpen,
+  onDeviceUpdate,
 }) => {
   const { sensorData, loading: sensorLoading } = useSensorData(device.devid, enabledDataTypes);
   const { forwardData, isForwarding } = useDataForwarding();
@@ -630,6 +636,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           onOpenChange={setIsDetailsDialogOpen}
           device={device}
           role={role}
+          onDeviceUpdate={onDeviceUpdate}
         />
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { LineChart, Info, Database } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { LineChart, Info, Database, Save, Thermometer, Battery as BatteryIcon } from "lucide-react";
 import { TemperatureGraph } from "@/components/TemperatureGraph";
+import { BatteryVoltageGraph } from "@/components/BatteryVoltageGraph";
 import DeviceLogViewer from "@/components/DeviceLogViewer";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface DeviceDetailsDialogProps {
   open: boolean;
@@ -20,8 +25,14 @@ interface DeviceDetailsDialogProps {
     hw_version: string;
     sw_version: string;
     iccid: string;
+    apn: string | null;
+    band: number | null;
+    description: string | null;
+    battery_level: number | null;
+    internal_temperature: number | null;
   };
   role: string;
+  onDeviceUpdate: () => void;
 }
 
 export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
@@ -29,9 +40,54 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
   onOpenChange,
   device,
   role,
+  onDeviceUpdate,
 }) => {
   const [showTemperatureGraph, setShowTemperatureGraph] = useState(false);
+  const [showBatteryGraph, setShowBatteryGraph] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [apn, setApn] = useState(device.apn || "");
+  const [band, setBand] = useState(device.band?.toString() || "");
+  const [description, setDescription] = useState(device.description || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+  const canEdit = ["admin", "moderator", "developer"].includes(role);
+
+  useEffect(() => {
+    setApn(device.apn || "");
+    setBand(device.band?.toString() || "");
+    setDescription(device.description || "");
+  }, [device]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from("device_config")
+        .update({
+          apn: apn.trim() || null,
+          band: band ? parseInt(band) : null,
+          description: description.trim() || null,
+        })
+        .eq("devid", device.devid);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Device details updated successfully",
+      });
+      onDeviceUpdate();
+    } catch (error) {
+      console.error("Error updating device:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update device details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <>
@@ -47,7 +103,8 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+            {/* Static Information */}
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-border/30">
                 <span className="text-sm font-medium text-muted-foreground">Device ID</span>
@@ -70,20 +127,103 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() => {
-                  setShowTemperatureGraph(true);
-                  onOpenChange(false);
-                }}
-              >
-                <LineChart className="h-4 w-4 mr-2" />
-                View Temperature Graph
-              </Button>
+            {/* Temperature with Graph Button */}
+            <div className="flex items-center justify-between py-2 border-b border-border/30">
+              <div className="flex items-center gap-2">
+                <Thermometer className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Temperature</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono">
+                  {device.internal_temperature !== null ? `${device.internal_temperature}°C` : "N/A"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowTemperatureGraph(true);
+                    onOpenChange(false);
+                  }}
+                >
+                  <LineChart className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
-              {role === "developer" && (
+            {/* Battery Voltage with Graph Button */}
+            <div className="flex items-center justify-between py-2 border-b border-border/30">
+              <div className="flex items-center gap-2">
+                <BatteryIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Battery Voltage</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono">
+                  {device.battery_level !== null ? `${(device.battery_level / 1000).toFixed(3)} V` : "N/A"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowBatteryGraph(true);
+                    onOpenChange(false);
+                  }}
+                >
+                  <LineChart className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Editable Fields */}
+            <div className="space-y-3 pt-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">APN</label>
+                <Input
+                  value={apn}
+                  onChange={(e) => setApn(e.target.value)}
+                  disabled={!canEdit}
+                  placeholder="Enter APN"
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Band</label>
+                <Input
+                  value={band}
+                  onChange={(e) => setBand(e.target.value)}
+                  disabled={!canEdit}
+                  placeholder="Enter Band"
+                  type="number"
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={!canEdit}
+                  placeholder="Enter description"
+                  className="font-mono text-sm min-h-[80px]"
+                />
+              </div>
+
+              {canEdit && (
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="w-full"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            {role === "developer" && (
+              <div className="pt-3 border-t border-border/30">
                 <Button
                   className="w-full"
                   variant="outline"
@@ -95,8 +235,8 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
                   <Database className="h-4 w-4 mr-2" />
                   View Device Logs
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -104,6 +244,13 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
       <TemperatureGraph
         open={showTemperatureGraph}
         onOpenChange={setShowTemperatureGraph}
+        devid={device.devid}
+        deviceName={device.name}
+      />
+
+      <BatteryVoltageGraph
+        open={showBatteryGraph}
+        onOpenChange={setShowBatteryGraph}
         devid={device.devid}
         deviceName={device.name}
       />
