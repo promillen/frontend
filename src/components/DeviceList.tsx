@@ -26,6 +26,10 @@ interface DeviceConfig {
   last_seen: string;
   created_at: string;
   battery_level: number;
+  apn: string | null;
+  band: number | null;
+  description: string | null;
+  internal_temperature: number | null;
 }
 
 // Application mode mapping
@@ -414,6 +418,7 @@ const DeviceList = () => {
               getBatteryColor={getBatteryColor}
               isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
               isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
+              onDeviceUpdate={fetchDevices}
             />
           );
         })}
