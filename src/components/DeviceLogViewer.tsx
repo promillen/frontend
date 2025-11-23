@@ -24,15 +24,19 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
 
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('en-GB', { 
+    const d = new Date(timestamp);
+    const time = d.toLocaleTimeString('en-GB', {
       hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    const date = d.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
     });
+    return `${time} ${date}`;
   };
 
   const groupLogsByUplink = (logs: any[]) => {
@@ -125,7 +129,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex items-center gap-2">
-                                <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                                <ChevronRight className="h-4 w-4" />
                                 <span className="font-medium">
                                   {isUplinkGroup ? `Uplink #${uplinkNumber}` : 'System Messages'}
                                 </span>
@@ -165,7 +169,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                               {log.data && (
                                 <details className="group">
                                   <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                                    <span className="group-open:rotate-90 transition-transform">▶</span>
+                                    <span>▶</span>
                                     Raw Data
                                   </summary>
                                   <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
@@ -184,7 +188,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
             </ScrollArea>
 
             <div className="text-sm text-muted-foreground p-3 bg-muted/20 rounded border-t flex-shrink-0">
-              {databaseLogs.length} database entries • Last updated: {new Date().toLocaleTimeString('en-GB', { hour12: false })}
+              {databaseLogs.length} database entries • Last updated: {formatTimestamp(new Date().toISOString())}
             </div>
         </CardContent>
       </Card>
