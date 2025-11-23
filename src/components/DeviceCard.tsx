@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit2, Check, X, ChevronDown, Database, Send, Settings, Info } from "lucide-react";
+import { Edit2, Check, X, ChevronDown, Send } from "lucide-react";
 import { DeviceDetailsDialog } from "@/components/DeviceDetailsDialog";
 import { Battery } from "@/components/ui/battery";
 import { formatInTimeZone } from "date-fns-tz";
@@ -197,7 +197,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
   return (
     <Card
-      className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
+      className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
+      onClick={() => setIsDetailsDialogOpen(true)}
     >
       <CardHeader className="relative">
         <div className="flex justify-between items-start">
@@ -254,16 +255,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         {/* Sensor Type 0: Not Configured */}
         {sensorType === 0 && (
           <div className="text-center py-4">
-            <p className="text-muted-foreground text-sm mb-3">Device not configured</p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onConfigureDevice(device.devid)}
-              className="bg-primary/5 hover:bg-primary/10 border-primary/20"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configure Device
-            </Button>
+            <p className="text-muted-foreground text-sm mb-3">Device not configured - click to configure</p>
           </div>
         )}
 
@@ -602,33 +594,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
             </div>
           </div>
         )}
-
-        {/* Action Buttons - shown for all devices */}
-        <div className="border-t border-border/30 pt-3 space-y-2">
-          {/* View Details Button - shown for all users */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsDetailsDialogOpen(true)}
-            className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-          >
-            <Info className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-
-          {/* Configure Device Button - shown for all roles except regular users */}
-          {canEdit && sensorType !== 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onConfigureDevice(device.devid)}
-              className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configure Device
-            </Button>
-          )}
-        </div>
 
         {/* Device Details Dialog */}
         <DeviceDetailsDialog
