@@ -612,47 +612,45 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
-        {sensorType !== 0 && (
-          <div className="border-t border-border/30 pt-3 space-y-2">
-            {/* View Details Button - shown for all users */}
+        {/* Action Buttons - shown for all devices */}
+        <div className="border-t border-border/30 pt-3 space-y-2">
+          {/* View Details Button - shown for all users */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsDetailsDialogOpen(true)}
+            className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
+          >
+            <Info className="h-4 w-4 mr-2" />
+            View Details
+          </Button>
+
+          {/* Configure Device Button - shown for all roles except regular users */}
+          {canEdit && sensorType !== 0 && (
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setIsDetailsDialogOpen(true)}
+              onClick={() => onConfigureDevice(device.devid)}
               className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
             >
-              <Info className="h-4 w-4 mr-2" />
-              View Details
+              <Settings className="h-4 w-4 mr-2" />
+              Configure Device
             </Button>
+          )}
 
-            {/* Configure Device Button - shown for all roles except regular users */}
-            {canEdit && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onConfigureDevice(device.devid)}
-                className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Device
-              </Button>
-            )}
-
-            {/* View Device Logs Button - developer only */}
-            {role === "developer" && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onViewLogs(device.devid)}
-                className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-              >
-                <Database className="h-4 w-4 mr-2" />
-                View Device Logs
-              </Button>
-            )}
-          </div>
-        )}
+          {/* View Device Logs Button - developer only, shown for all devices */}
+          {role === "developer" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onViewLogs(device.devid)}
+              className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
+            >
+              <Database className="h-4 w-4 mr-2" />
+              View Device Logs
+            </Button>
+          )}
+        </div>
 
         {/* Device Details Dialog */}
         <DeviceDetailsDialog
