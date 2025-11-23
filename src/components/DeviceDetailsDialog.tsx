@@ -138,12 +138,12 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
           <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
             {/* Editable Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Device Name2</label>
+              <label className="text-sm font-medium text-muted-foreground">Device Name</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={!canEdit}
-                placeholder="Enter device name2"
+                placeholder="Enter device name"
                 className="text-sm"
               />
             </div>
