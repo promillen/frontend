@@ -9,7 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit2, Check, X, ChevronDown, Database, Send, Settings } from "lucide-react";
+import { Edit2, Check, X, ChevronDown, Database, Send, Settings, Info } from "lucide-react";
+import { DeviceDetailsDialog } from "@/components/DeviceDetailsDialog";
 import { Battery } from "@/components/ui/battery";
 import { formatInTimeZone } from "date-fns-tz";
 import { useSensorData } from "@/hooks/useSensorData";
@@ -88,6 +89,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   const { forwardData, isForwarding } = useDataForwarding();
   const { location, loading: locationLoading } = useLatestLocation(device.devid);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = React.useState(false);
 
   const canEdit = ["admin", "moderator", "developer"].includes(role);
   const sensorType = device.sensor_type ?? 0;
@@ -613,6 +615,17 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         {/* Action Buttons */}
         {sensorType !== 0 && (
           <div className="border-t border-border/30 pt-3 space-y-2">
+            {/* View Details Button - shown for all users */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsDetailsDialogOpen(true)}
+              className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
+            >
+              <Info className="h-4 w-4 mr-2" />
+              View Details
+            </Button>
+
             {/* Configure Device Button - shown for all roles except regular users */}
             {canEdit && (
               <Button
@@ -640,6 +653,13 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
             )}
           </div>
         )}
+
+        {/* Device Details Dialog */}
+        <DeviceDetailsDialog
+          open={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+          device={device}
+        />
       </CardContent>
     </Card>
   );
