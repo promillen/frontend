@@ -258,7 +258,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
         {/* Sensor Type 0: Not Configured */}
         {sensorType === 0 && (
           <div className="text-center py-4">
-            <p className="text-muted-foreground text-sm mb-3">Device not configured - click to configure</p>
           </div>
         )}
 

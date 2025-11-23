@@ -125,8 +125,11 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl" onClick={(e) => e.stopPropagation()}>
+      <Dialog open={open} onOpenChange={onOpenChange} modal>
+        <DialogContent className="sm:max-w-2xl" onClick={(e) => e.stopPropagation()} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => {
+          e.preventDefault();
+          onOpenChange(false);
+        }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="h-5 w-5" />
@@ -145,6 +148,18 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
                 disabled={!canEdit}
                 placeholder="Enter device name"
                 className="text-sm"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">Description</label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!canEdit}
+                placeholder="Enter description"
+                className="text-sm min-h-[80px]"
               />
             </div>
 
@@ -277,18 +292,6 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
               ) : (
                 <span className="text-sm text-muted-foreground">{SENSOR_TYPE_MAP[sensorType] || "Unknown"}</span>
               )}
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2 pt-3">
-              <label className="text-sm font-medium text-muted-foreground">Description</label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={!canEdit}
-                placeholder="Enter description"
-                className="text-sm min-h-[80px]"
-              />
             </div>
 
             {/* Save Button */}
