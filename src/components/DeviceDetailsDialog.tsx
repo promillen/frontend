@@ -7,8 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { LineChart, Info } from "lucide-react";
+import { LineChart, Info, Database } from "lucide-react";
 import { TemperatureGraph } from "@/components/TemperatureGraph";
+import DeviceLogViewer from "@/components/DeviceLogViewer";
 
 interface DeviceDetailsDialogProps {
   open: boolean;
@@ -20,14 +21,17 @@ interface DeviceDetailsDialogProps {
     sw_version: string;
     iccid: string;
   };
+  role: string;
 }
 
 export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
   open,
   onOpenChange,
   device,
+  role,
 }) => {
   const [showTemperatureGraph, setShowTemperatureGraph] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
 
   return (
     <>
@@ -66,16 +70,33 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
               </div>
             </div>
 
-            <Button
-              className="w-full"
-              onClick={() => {
-                setShowTemperatureGraph(true);
-                onOpenChange(false);
-              }}
-            >
-              <LineChart className="h-4 w-4 mr-2" />
-              View Temperature Graph
-            </Button>
+            <div className="space-y-2">
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => {
+                  setShowTemperatureGraph(true);
+                  onOpenChange(false);
+                }}
+              >
+                <LineChart className="h-4 w-4 mr-2" />
+                View Temperature Graph
+              </Button>
+
+              {role === "developer" && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => {
+                    setShowLogs(true);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  View Device Logs
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -85,6 +106,12 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
         onOpenChange={setShowTemperatureGraph}
         devid={device.devid}
         deviceName={device.name}
+      />
+
+      <DeviceLogViewer
+        deviceId={device.devid}
+        isOpen={showLogs}
+        onClose={() => setShowLogs(false)}
       />
     </>
   );

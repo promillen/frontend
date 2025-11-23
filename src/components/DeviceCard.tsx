@@ -637,19 +637,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               Configure Device
             </Button>
           )}
-
-          {/* View Device Logs Button - developer only, shown for all devices */}
-          {role === "developer" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onViewLogs(device.devid)}
-              className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              View Device Logs
-            </Button>
-          )}
         </div>
 
         {/* Device Details Dialog */}
@@ -657,6 +644,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
           open={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           device={device}
+          role={role}
         />
       </CardContent>
     </Card>

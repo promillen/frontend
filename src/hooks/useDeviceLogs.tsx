@@ -27,24 +27,21 @@ export const useDeviceLogs = (deviceId: string | null) => {
         .from('sensor_data')
         .select('*')
         .eq('devid', deviceId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       // Fetch activity logs  
       const { data: activityData, error: activityError } = await supabase
         .from('activity')
         .select('*')
         .eq('devid', deviceId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       // Fetch reboot logs
       const { data: rebootData, error: rebootError } = await supabase
         .from('reboot')
         .select('*')
         .eq('devid', deviceId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
 
       if (sensorError || activityError || rebootError) {
         throw new Error('Failed to fetch logs');
@@ -81,8 +78,8 @@ export const useDeviceLogs = (deviceId: string | null) => {
       // Sort by timestamp (most recent first)
       combinedLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-      // Take only the 10 most recent across all types
-      setLogs(combinedLogs.slice(0, 10));
+      // Return all logs (no limit)
+      setLogs(combinedLogs);
     } catch (err) {
       console.error('Error fetching device logs:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch logs');
