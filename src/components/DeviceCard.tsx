@@ -245,21 +245,6 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
       </CardHeader>
 
       <CardContent className="relative space-y-3">
-        {/* Developer-specific info - always shown for developers */}
-        {role === "developer" && (
-          <div className="grid grid-cols-1 gap-1 text-sm pb-3 border-b border-border/30">
-            <p className="text-muted-foreground font-mono">
-              <span className="font-bold text-foreground">HW:</span> {device.hw_version || "null"}
-            </p>
-            <p className="text-muted-foreground font-mono">
-              <span className="font-bold text-foreground">SW:</span> {device.sw_version || "null"}
-            </p>
-            <p className="text-muted-foreground font-mono">
-              <span className="font-bold text-foreground">ICCID:</span> {device.iccid?.trim() || "null"}
-            </p>
-          </div>
-        )}
-
         {/* Sensor Type 0: Not Configured */}
         {sensorType === 0 && (
           <div className="text-center py-4">
