@@ -1,26 +1,31 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit2, Check, X, ChevronDown, Database, Send, Settings } from 'lucide-react';
-import { Battery } from '@/components/ui/battery';
-import { formatInTimeZone } from 'date-fns-tz';
-import { useSensorData } from '@/hooks/useSensorData';
-import { useDataForwarding } from '@/hooks/useDataForwarding';
-import { useLatestLocation } from '@/hooks/useLatestLocation';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Edit2, Check, X, ChevronDown, Database, Send, Settings } from "lucide-react";
+import { Battery } from "@/components/ui/battery";
+import { formatInTimeZone } from "date-fns-tz";
+import { useSensorData } from "@/hooks/useSensorData";
+import { useDataForwarding } from "@/hooks/useDataForwarding";
+import { useLatestLocation } from "@/hooks/useLatestLocation";
 
 const LOCATION_MODE_MAP: Record<number, string> = {
-  0: 'None',
-  1: 'GNSS',
-  2: 'WiFi'
+  0: "None",
+  1: "GNSS",
+  2: "WiFi",
 };
 
 const SENSOR_TYPE_MAP: Record<number, string> = {
-  0: 'Not configured',
-  1: 'Tracker',
-  2: 'Soil Sensor'
+  0: "Not configured",
+  1: "Tracker",
+  2: "Soil Sensor",
 };
 
 interface DeviceConfig {
@@ -77,38 +82,39 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   getStatusBadge,
   getBatteryColor,
   isLogViewerOpen,
-  isConfigDialogOpen
+  isConfigDialogOpen,
 }) => {
   const { sensorData, loading: sensorLoading } = useSensorData(device.devid, enabledDataTypes);
   const { forwardData, isForwarding } = useDataForwarding();
   const { location, loading: locationLoading } = useLatestLocation(device.devid);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
-  const canEdit = ['admin', 'moderator', 'developer'].includes(role);
+  const canEdit = ["admin", "moderator", "developer"].includes(role);
   const sensorType = device.sensor_type ?? 0;
-  
+
   // Card should be lifted when any of these conditions are true
   const shouldLift = isDropdownOpen || isLogViewerOpen || isConfigDialogOpen;
 
-  const batteryColorClass = device.battery_level != null ? getBatteryColor(device.battery_level) : 'text-muted-foreground';
+  const batteryColorClass =
+    device.battery_level != null ? getBatteryColor(device.battery_level) : "text-muted-foreground";
 
   const formatHeartbeat = (raw?: number | null) => {
     const s = Number(raw ?? 0);
-    if (s <= 0) return 'null';           // treat 0/empty as not present
-    if (s >= 86400) return '24h';
-    if (s >= 43200) return '12h';
-    if (s >= 21600) return '6h';
-    if (s >= 3600) return '1h';
-    if (s >= 1800) return '30m';
-    if (s >= 300) return '5m';
-    if (s >= 60) return '1m';
+    if (s <= 0) return "null"; // treat 0/empty as not present
+    if (s >= 86400) return "24h";
+    if (s >= 43200) return "12h";
+    if (s >= 21600) return "6h";
+    if (s >= 3600) return "1h";
+    if (s >= 1800) return "30m";
+    if (s >= 300) return "5m";
+    if (s >= 60) return "1m";
     return `${s}s`;
   };
 
   const hbLabel = formatHeartbeat(device.heartbeat_interval);
 
   const formatDanishTime = (dateString: string) => {
-    return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
+    return formatInTimeZone(new Date(dateString), "Europe/Copenhagen", "dd/MM/yyyy HH:mm:ss");
   };
 
   const handleForwardData = async () => {
@@ -125,37 +131,37 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
   };
 
   const renderSensorValue = (dataType: string, data: any) => {
-    if (!data) return 'No data';
+    if (!data) return "No data";
 
     // Handle different data types with appropriate formatting
     switch (dataType) {
-      case 'temperature':
-        if (typeof data === 'object' && data.temperature !== undefined) {
+      case "temperature":
+        if (typeof data === "object" && data.temperature !== undefined) {
           return `${data.temperature}°C`;
         }
-        return typeof data === 'number' ? `${data}°C` : 'Invalid data';
+        return typeof data === "number" ? `${data}°C` : "Invalid data";
 
-      case 'location':
-        if (typeof data === 'object' && data.latitude && data.longitude) {
+      case "location":
+        if (typeof data === "object" && data.latitude && data.longitude) {
           return `${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}`;
         }
-        return 'Invalid location';
+        return "Invalid location";
 
-      case 'ph':
-        return typeof data === 'number' ? `pH ${data.toFixed(2)}` : data.ph ? `pH ${data.ph.toFixed(2)}` : 'Invalid pH';
+      case "ph":
+        return typeof data === "number" ? `pH ${data.toFixed(2)}` : data.ph ? `pH ${data.ph.toFixed(2)}` : "Invalid pH";
 
-      case 'soil_moisture':
-        return typeof data === 'number' ? `${data}%` : data.moisture ? `${data.moisture}%` : 'Invalid moisture';
+      case "soil_moisture":
+        return typeof data === "number" ? `${data}%` : data.moisture ? `${data.moisture}%` : "Invalid moisture";
 
-      case 'humidity':
-        return typeof data === 'number' ? `${data}%` : data.humidity ? `${data.humidity}%` : 'Invalid humidity';
+      case "humidity":
+        return typeof data === "number" ? `${data}%` : data.humidity ? `${data.humidity}%` : "Invalid humidity";
 
-      case 'pressure':
-        return typeof data === 'number' ? `${data} hPa` : data.pressure ? `${data.pressure} hPa` : 'Invalid pressure';
+      case "pressure":
+        return typeof data === "number" ? `${data} hPa` : data.pressure ? `${data.pressure} hPa` : "Invalid pressure";
 
       default:
         // Generic handling for unknown data types
-        if (typeof data === 'object') {
+        if (typeof data === "object") {
           return JSON.stringify(data, null, 1);
         }
         return String(data);
@@ -164,18 +170,27 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType) {
-      case 'temperature': return '🌡️';
-      case 'location': return '📍';
-      case 'ph': return '🧪';
-      case 'soil_moisture': return '💧';
-      case 'humidity': return '💨';
-      case 'pressure': return '🔽';
-      default: return '📊';
+      case "temperature":
+        return "🌡️";
+      case "location":
+        return "📍";
+      case "ph":
+        return "🧪";
+      case "soil_moisture":
+        return "💧";
+      case "humidity":
+        return "💨";
+      case "pressure":
+        return "🔽";
+      default:
+        return "📊";
     }
   };
 
   return (
-    <Card className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${shouldLift ? '-translate-y-1 shadow-md' : ''}`}>
+    <Card
+      className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
+    >
       <CardHeader className="relative">
         <div className="flex justify-between items-start">
           <div className="flex-1">
@@ -186,8 +201,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                   onChange={(e) => onNameChange(e.target.value)}
                   className="text-lg font-semibold"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') onSaveEdit();
-                    if (e.key === 'Escape') onCancelEdit();
+                    if (e.key === "Enter") onSaveEdit();
+                    if (e.key === "Escape") onCancelEdit();
                   }}
                   autoFocus
                 />
@@ -200,10 +215,8 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">
-                  {device.name || device.devid}
-                </CardTitle>
-                {['admin', 'moderator'].includes(role) && (
+                <CardTitle className="text-lg">{device.name || device.devid}</CardTitle>
+                {["admin", "moderator"].includes(role) && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -215,19 +228,15 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 )}
               </div>
             )}
-            <CardDescription className="font-mono text-xs">ID: {device.devid}</CardDescription>
+            <CardDescription className="font-mono text-xs">DevID: {device.devid}</CardDescription>
           </div>
           <div className="flex flex-col items-end gap-2">
             {getStatusBadge(device.devid)}
             <div className="flex items-center gap-2">
               <span className={`font-medium text-xs ${batteryColorClass}`}>
-                {device.battery_level != null ? (device.battery_level / 1000).toFixed(3) + ' V' : '?'}
+                {device.battery_level != null ? (device.battery_level / 1000).toFixed(3) + " V" : "?"}
               </span>
-              <Battery
-                level={device.battery_level ?? 0}
-                size="md"
-                className={batteryColorClass}
-              />
+              <Battery level={device.battery_level ?? 0} size="md" className={batteryColorClass} />
             </div>
           </div>
         </div>
@@ -235,11 +244,17 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
       <CardContent className="relative space-y-3">
         {/* Developer-specific info - always shown for developers */}
-        {role === 'developer' && (
+        {role === "developer" && (
           <div className="grid grid-cols-1 gap-1 text-sm pb-3 border-b border-border/30">
-            <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">HW:</span> {device.hw_version || 'null'}</p>
-            <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">SW:</span> {device.sw_version || 'null'}</p>
-            <p className="text-muted-foreground font-mono"><span className="font-bold text-foreground">ICCID:</span> {device.iccid?.trim() || 'null'}</p>
+            <p className="text-muted-foreground font-mono">
+              <span className="font-bold text-foreground">HW:</span> {device.hw_version || "null"}
+            </p>
+            <p className="text-muted-foreground font-mono">
+              <span className="font-bold text-foreground">SW:</span> {device.sw_version || "null"}
+            </p>
+            <p className="text-muted-foreground font-mono">
+              <span className="font-bold text-foreground">ICCID:</span> {device.iccid?.trim() || "null"}
+            </p>
           </div>
         )}
 
@@ -273,7 +288,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                       size="sm"
                       className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
                     >
-                      {LOCATION_MODE_MAP[device.location_mode] || 'Unknown'}
+                      {LOCATION_MODE_MAP[device.location_mode] || "Unknown"}
                       <ChevronDown className="h-3 w-3 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -291,7 +306,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                 </DropdownMenu>
               ) : (
                 <span className="text-muted-foreground capitalize">
-                  {LOCATION_MODE_MAP[device.location_mode] || 'Unknown'}
+                  {LOCATION_MODE_MAP[device.location_mode] || "Unknown"}
                 </span>
               )}
             </div>
@@ -312,13 +327,48 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)} className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)} className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)} className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)} className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 60)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      1m
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 300)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      5m
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 1800)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      30m
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 3600)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      1h
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 21600)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      6h
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 43200)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      12h
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 86400)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      24h
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
@@ -337,13 +387,13 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                       size="sm"
                       className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
                     >
-                      {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                      {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || "Unknown"}
                       <ChevronDown className="h-3 w-3 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
                     {Object.entries(SENSOR_TYPE_MAP)
-                      .filter(([typeNum]) => typeNum !== '0')
+                      .filter(([typeNum]) => typeNum !== "0")
                       .map(([typeNum, typeLabel]) => (
                         <DropdownMenuItem
                           key={typeNum}
@@ -356,9 +406,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span className="text-muted-foreground">
-                  {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
-                </span>
+                <span className="text-muted-foreground">{SENSOR_TYPE_MAP[device.sensor_type ?? 0] || "Unknown"}</span>
               )}
             </div>
 
@@ -373,9 +421,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                     <span className="font-mono text-sm">
                       {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
                     </span>
-                    <div className="text-muted-foreground text-xs">
-                      {formatDanishTime(location.created_at)}
-                    </div>
+                    <div className="text-muted-foreground text-xs">{formatDanishTime(location.created_at)}</div>
                   </div>
                 ) : (
                   <span className="text-xs text-muted-foreground">No location data</span>
@@ -399,9 +445,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                     <span className="font-mono text-sm">
                       {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
                     </span>
-                    <div className="text-muted-foreground text-xs">
-                      {formatDanishTime(location.created_at)}
-                    </div>
+                    <div className="text-muted-foreground text-xs">{formatDanishTime(location.created_at)}</div>
                   </div>
                 ) : (
                   <span className="text-xs text-muted-foreground">No location data</span>
@@ -425,13 +469,48 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 60)} className="hover:bg-primary/10 cursor-pointer">1m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 300)} className="hover:bg-primary/10 cursor-pointer">5m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 1800)} className="hover:bg-primary/10 cursor-pointer">30m</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 3600)} className="hover:bg-primary/10 cursor-pointer">1h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 21600)} className="hover:bg-primary/10 cursor-pointer">6h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 43200)} className="hover:bg-primary/10 cursor-pointer">12h</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onHeartbeatUpdate(device.devid, 86400)} className="hover:bg-primary/10 cursor-pointer">24h</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 60)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      1m
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 300)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      5m
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 1800)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      30m
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 3600)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      1h
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 21600)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      6h
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 43200)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      12h
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onHeartbeatUpdate(device.devid, 86400)}
+                      className="hover:bg-primary/10 cursor-pointer"
+                    >
+                      24h
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
@@ -450,13 +529,13 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                       size="sm"
                       className="h-7 px-3 text-sm font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-primary/10"
                     >
-                      {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
+                      {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || "Unknown"}
                       <ChevronDown className="h-3 w-3 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="bg-background/95 backdrop-blur-md border-border/50 z-50">
                     {Object.entries(SENSOR_TYPE_MAP)
-                      .filter(([typeNum]) => typeNum !== '0')
+                      .filter(([typeNum]) => typeNum !== "0")
                       .map(([typeNum, typeLabel]) => (
                         <DropdownMenuItem
                           key={typeNum}
@@ -469,9 +548,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <span className="text-muted-foreground">
-                  {SENSOR_TYPE_MAP[device.sensor_type ?? 0] || 'Unknown'}
-                </span>
+                <span className="text-muted-foreground">{SENSOR_TYPE_MAP[device.sensor_type ?? 0] || "Unknown"}</span>
               )}
             </div>
 
@@ -497,24 +574,20 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
                   <p className="text-xs text-muted-foreground">Loading sensor data...</p>
                 ) : (
                   <div className="grid grid-cols-1 gap-2">
-                    {enabledDataTypes.map(dataType => {
+                    {enabledDataTypes.map((dataType) => {
                       const data = sensorData[dataType];
                       return (
                         <div key={dataType} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-1">
                             <span>{getDataTypeIcon(dataType)}</span>
-                            <span className="font-medium capitalize">
-                              {dataType.replace('_', ' ')}:
-                            </span>
+                            <span className="font-medium capitalize">{dataType.replace("_", " ")}:</span>
                           </div>
                           <div className="text-right">
                             <span className="font-mono">
-                              {data ? renderSensorValue(dataType, data.data) : 'No data'}
+                              {data ? renderSensorValue(dataType, data.data) : "No data"}
                             </span>
                             {data && (
-                              <div className="text-muted-foreground text-xs">
-                                {formatDanishTime(data.created_at)}
-                              </div>
+                              <div className="text-muted-foreground text-xs">{formatDanishTime(data.created_at)}</div>
                             )}
                           </div>
                         </div>
@@ -554,7 +627,7 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
             )}
 
             {/* View Device Logs Button - developer only */}
-            {role === 'developer' && (
+            {role === "developer" && (
               <Button
                 size="sm"
                 variant="outline"
