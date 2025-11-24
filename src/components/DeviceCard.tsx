@@ -197,12 +197,14 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
 
   return (
     <Card
-      className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
+      className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${!isDetailsDialogOpen ? 'cursor-pointer' : ''} ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
       onClick={(e) => {
-        // Only open if we're not clicking on interactive elements
-        const target = e.target as HTMLElement;
-        if (!target.closest('button') && !target.closest('[role="combobox"]')) {
-          setIsDetailsDialogOpen(true);
+        if (!isDetailsDialogOpen) {
+          const target = e.target as HTMLElement;
+          if (!target.closest('button') && !target.closest('[role="combobox"]')) {
+            e.stopPropagation();
+            setIsDetailsDialogOpen(true);
+          }
         }
       }}
     >
