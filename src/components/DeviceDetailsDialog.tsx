@@ -132,6 +132,9 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
               <Info className="h-5 w-5" />
               Device Details
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              View and edit device configuration and details
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4 overflow-y-auto flex-1">
