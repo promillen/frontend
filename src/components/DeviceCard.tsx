@@ -199,8 +199,11 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
     <Card
       className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
       onClick={(e) => {
-        e.stopPropagation();
-        setIsDetailsDialogOpen(true);
+        // Only open if we're not clicking on interactive elements
+        const target = e.target as HTMLElement;
+        if (!target.closest('button') && !target.closest('[role="combobox"]')) {
+          setIsDetailsDialogOpen(true);
+        }
       }}
     >
       <CardHeader className="relative">
