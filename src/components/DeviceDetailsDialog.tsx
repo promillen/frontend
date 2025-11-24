@@ -126,13 +126,17 @@ export const DeviceDetailsDialog: React.FC<DeviceDetailsDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange} modal>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent 
+          className="sm:max-w-2xl max-h-[90vh] flex flex-col"
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="h-5 w-5" />
               Device Details
             </DialogTitle>
-            <DialogDescription>Hardware and software information for {device.name || device.devid}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4 overflow-y-auto flex-1">
