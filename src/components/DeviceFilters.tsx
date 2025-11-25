@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,16 +38,6 @@ interface DeviceFiltersProps {
 
 const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange }: DeviceFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState(filters);
-
-  // Update local filters when props change
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
-
-  const applyFilters = () => {
-    onFiltersChange(localFilters);
-  };
 
   const resetFilters = () => {
     const defaultFilters: DeviceFilters = {
@@ -57,17 +47,16 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
       batteryRange: [0, 100],
       dateRange: {},
     };
-    setLocalFilters(defaultFilters);
     onFiltersChange(defaultFilters);
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (localFilters.search) count++;
-    if (localFilters.status !== 'all') count++;
-    if (localFilters.applicationMode !== 'all') count++;
-    if (localFilters.batteryRange[0] > 0 || localFilters.batteryRange[1] < 100) count++;
-    if (localFilters.dateRange.from || localFilters.dateRange.to) count++;
+    if (filters.search) count++;
+    if (filters.status !== 'all') count++;
+    if (filters.applicationMode !== 'all') count++;
+    if (filters.batteryRange[0] > 0 || filters.batteryRange[1] < 100) count++;
+    if (filters.dateRange.from || filters.dateRange.to) count++;
     return count;
   };
 
@@ -145,8 +134,8 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                 <div className="space-y-2">
                   <Label htmlFor="status">Device Status</Label>
                   <Select
-                    value={localFilters.status}
-                    onValueChange={(value: any) => setLocalFilters(prev => ({ ...prev, status: value }))}
+                    value={filters.status}
+                    onValueChange={(value: any) => onFiltersChange({ ...filters, status: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="All statuses" />
@@ -163,8 +152,8 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                 <div className="space-y-2">
                   <Label htmlFor="mode">Application Mode</Label>
                   <Select
-                    value={localFilters.applicationMode}
-                    onValueChange={(value) => setLocalFilters(prev => ({ ...prev, applicationMode: value }))}
+                    value={filters.applicationMode}
+                    onValueChange={(value) => onFiltersChange({ ...filters, applicationMode: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="All modes" />
@@ -184,28 +173,19 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                   <Label>Battery Level Range</Label>
                   <div className="px-3 py-2">
                     <Slider
-                      value={localFilters.batteryRange}
-                      onValueChange={(value) => setLocalFilters(prev => ({ ...prev, batteryRange: value as [number, number] }))}
+                      value={filters.batteryRange}
+                      onValueChange={(value) => onFiltersChange({ ...filters, batteryRange: value as [number, number] })}
                       max={100}
                       min={0}
                       step={5}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>{localFilters.batteryRange[0]}%</span>
-                      <span>{localFilters.batteryRange[1]}%</span>
+                      <span>{filters.batteryRange[0]}%</span>
+                      <span>{filters.batteryRange[1]}%</span>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setLocalFilters(filters)}>
-                  Cancel
-                </Button>
-                <Button onClick={applyFilters}>
-                  Apply Filters
-                </Button>
               </div>
             </CardContent>
           </Card>
