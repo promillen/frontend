@@ -39,9 +39,11 @@ interface DeviceFiltersProps {
   visibleColumns: string[];
   allColumns: { id: string; label: string }[];
   onToggleColumn: (columnId: string) => void;
+  onShowAllColumns: () => void;
+  onHideAllColumns: () => void;
 }
 
-const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange, visibleColumns, allColumns, onToggleColumn }: DeviceFiltersProps) => {
+const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange, visibleColumns, allColumns, onToggleColumn, onShowAllColumns, onHideAllColumns }: DeviceFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false);
 
@@ -108,23 +110,45 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64" align="end">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm mb-3">Select Columns</h4>
-                    {allColumns.map((column) => (
-                      <div key={column.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={column.id}
-                          checked={visibleColumns.includes(column.id)}
-                          onCheckedChange={() => onToggleColumn(column.id)}
-                        />
-                        <label
-                          htmlFor={column.id}
-                          className="text-sm cursor-pointer flex-1"
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Select Columns</h4>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={onShowAllColumns}
+                          className="h-7 px-2 text-xs"
                         >
-                          {column.label}
-                        </label>
+                          Show All
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={onHideAllColumns}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Hide All
+                        </Button>
                       </div>
-                    ))}
+                    </div>
+                    <div className="space-y-2">
+                      {allColumns.map((column) => (
+                        <div key={column.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={column.id}
+                            checked={visibleColumns.includes(column.id)}
+                            onCheckedChange={() => onToggleColumn(column.id)}
+                          />
+                          <label
+                            htmlFor={column.id}
+                            className="text-sm cursor-pointer flex-1"
+                          >
+                            {column.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
