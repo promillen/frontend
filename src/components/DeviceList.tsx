@@ -70,7 +70,7 @@ const DeviceList = () => {
     const saved = localStorage.getItem('deviceTableColumns');
     return saved ? JSON.parse(saved) : [
       'name', 'devid', 'hw_version', 'sw_version', 'iccid', 
-      'apn', 'band', 'temperature', 'battery', 'heartbeat'
+      'apn', 'band', 'temperature', 'battery', 'heartbeat', 'last_seen'
     ];
   });
   const [sortColumn, setSortColumn] = useState<string | null>('devid');
@@ -378,6 +378,7 @@ const DeviceList = () => {
     { id: 'temperature', label: 'Temperature' },
     { id: 'battery', label: 'Battery Voltage' },
     { id: 'heartbeat', label: 'Heartbeat Interval' },
+    { id: 'last_seen', label: 'Last Seen' },
   ];
 
   const toggleColumn = (columnId: string) => {
@@ -490,6 +491,10 @@ const DeviceList = () => {
           case 'heartbeat':
             aVal = a.heartbeat_interval || 0;
             bVal = b.heartbeat_interval || 0;
+            break;
+          case 'last_seen':
+            aVal = a.last_seen || '';
+            bVal = b.last_seen || '';
             break;
         }
 
@@ -707,6 +712,19 @@ const DeviceList = () => {
                       </div>
                     </th>
                   )}
+                  {visibleColumns.includes('last_seen') && (
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('last_seen')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Last Seen
+                        {sortColumn === 'last_seen' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -752,6 +770,11 @@ const DeviceList = () => {
                     )}
                     {visibleColumns.includes('heartbeat') && (
                       <td className="p-3 text-sm">{formatHeartbeat(device.heartbeat_interval)}</td>
+                    )}
+                    {visibleColumns.includes('last_seen') && (
+                      <td className="p-3 text-sm">
+                        {device.last_seen ? formatDanishTime(device.last_seen) : 'N/A'}
+                      </td>
                     )}
                   </tr>
                 ))}
