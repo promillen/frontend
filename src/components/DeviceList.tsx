@@ -61,6 +61,10 @@ const DeviceList = () => {
   const [loading, setLoading] = useState(true);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    const saved = localStorage.getItem('deviceViewMode');
+    return (saved === 'grid' || saved === 'list') ? saved : 'grid';
+  });
   const [filters, setFilters] = useState<DeviceFilters>({
     search: '',
     status: 'all',
@@ -76,6 +80,11 @@ const DeviceList = () => {
   const { role, canModifyData } = useUserRole();
   const { getEnabledDataTypes } = useDataTypeSelection();
   const { getDeviceConfig } = useDeviceConfiguration();
+
+  // Persist view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('deviceViewMode', viewMode);
+  }, [viewMode]);
 
   const fetchDevices = async () => {
     try {
@@ -386,9 +395,11 @@ const DeviceList = () => {
           availableModes={availableModes}
           onRefresh={fetchDevices}
           canAddDevice={role === 'admin' || role === 'moderator' || role === 'developer'}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'flex flex-col gap-4'}>
         {filteredDevices.map((device) => {
           const deviceConfig = getDeviceConfig(device.devid);
           return (

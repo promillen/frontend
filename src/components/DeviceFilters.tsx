@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus } from 'lucide-react';
+import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus, LayoutGrid, List } from 'lucide-react';
 
 const LOCATION_MODE_MAP: Record<number, string> = {
   0: 'None',
@@ -32,9 +32,11 @@ interface DeviceFiltersProps {
   availableModes: string[];
   onRefresh: () => void;
   canAddDevice: boolean;
+  viewMode: 'grid' | 'list';
+  onViewModeChange: (mode: 'grid' | 'list') => void;
 }
 
-const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice }: DeviceFiltersProps) => {
+const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange }: DeviceFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState(filters);
 
@@ -84,6 +86,24 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
             />
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('grid')}
+                className="rounded-r-none"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('list')}
+                className="rounded-l-none"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
