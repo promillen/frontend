@@ -43,6 +43,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
   const { availableDataTypes } = useDataTypeSelection();
   
   const [deviceName, setDeviceName] = useState('');
+  const [deviceDescription, setDeviceDescription] = useState('');
   const [heartbeatInterval, setHeartbeatInterval] = useState<number>(60);
   const [sensorType, setSensorType] = useState<number>(0);
   const [locationMode, setLocationMode] = useState<number>(0);
@@ -58,7 +59,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
       try {
         const { data, error } = await supabase
           .from('device_config')
-          .select('name, heartbeat_interval, sensor_type, location_mode')
+          .select('name, description, heartbeat_interval, sensor_type, location_mode')
           .eq('devid', deviceId)
           .single();
 
@@ -66,6 +67,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
 
         if (data) {
           setDeviceName(data.name || '');
+          setDeviceDescription(data.description || '');
           setHeartbeatInterval(data.heartbeat_interval || 60);
           setSensorType(data.sensor_type || 0);
           setLocationMode(data.location_mode || 0);
@@ -94,6 +96,7 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
         .from('device_config')
         .update({
           name: deviceName || null,
+          description: deviceDescription || null,
           heartbeat_interval: heartbeatInterval,
           sensor_type: sensorType,
           location_mode: locationMode
@@ -150,6 +153,17 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="device-description">Device Description</Label>
+              <Input
+                id="device-description"
+                value={deviceDescription}
+                onChange={(e) => setDeviceDescription(e.target.value)}
+                placeholder="Enter device description (optional)"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="heartbeat-interval">Heartbeat Interval (seconds)</Label>
               <Input
                 id="heartbeat-interval"
@@ -180,15 +194,6 @@ const DeviceConfigDialog: React.FC<DeviceConfigDialogProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="flex items-center justify-between py-2">
-              <Label htmlFor="forwarding-enabled">Enable data forwarding</Label>
-              <Switch
-                id="forwarding-enabled"
-                checked={config.forwardingEnabled}
-                onCheckedChange={() => toggleForwarding(deviceId)}
-              />
             </div>
 
             {/* Conditional fields based on sensor type */}
