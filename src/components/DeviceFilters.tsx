@@ -83,24 +83,18 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
             />
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => onViewModeChange('grid')}
-                className="rounded-r-none"
-              >
-                <LayoutGrid className="h-4 w-4" />
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+                <ChevronDown className="w-4 h-4 ml-1" />
               </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => onViewModeChange('list')}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
+            </CollapsibleTrigger>
             {viewMode === 'list' && (
               <Popover open={isColumnSelectorOpen} onOpenChange={setIsColumnSelectorOpen}>
                 <PopoverTrigger asChild>
@@ -153,28 +147,24 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                 </PopoverContent>
               </Popover>
             )}
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 text-xs">
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-                <ChevronDown className="w-4 h-4 ml-1" />
+            <div className="flex items-center border rounded-md">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('grid')}
+                className="rounded-r-none"
+              >
+                <LayoutGrid className="h-4 w-4" />
               </Button>
-            </CollapsibleTrigger>
-            <Button onClick={onRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            {canAddDevice && (
-              <Button size="sm" variant="default">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Device
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('list')}
+                className="rounded-l-none"
+              >
+                <List className="h-4 w-4" />
               </Button>
-            )}
+            </div>
           </div>
         </div>
 
