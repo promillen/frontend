@@ -80,8 +80,8 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
           <div className="flex-1">
             <Input
               placeholder="Search devices by name, ID, or ICCID..."
-              value={localFilters.search}
-              onChange={(e) => setLocalFilters(prev => ({ ...prev, search: e.target.value }))}
+              value={filters.search}
+              onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
               className="max-w-md"
             />
           </div>
