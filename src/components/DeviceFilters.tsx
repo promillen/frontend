@@ -7,7 +7,9 @@ import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus, LayoutGrid, List } from 'lucide-react';
+import { ChevronDown, Filter, X, RotateCcw, RefreshCw, Plus, LayoutGrid, List, Columns } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const LOCATION_MODE_MAP: Record<number, string> = {
   0: 'None',
@@ -34,10 +36,14 @@ interface DeviceFiltersProps {
   canAddDevice: boolean;
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
+  visibleColumns: string[];
+  allColumns: { id: string; label: string }[];
+  onToggleColumn: (columnId: string) => void;
 }
 
-const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange }: DeviceFiltersProps) => {
+const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange, visibleColumns, allColumns, onToggleColumn }: DeviceFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false);
 
   const resetFilters = () => {
     const defaultFilters: DeviceFilters = {
@@ -93,6 +99,36 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
                 <List className="h-4 w-4" />
               </Button>
             </div>
+            {viewMode === 'list' && (
+              <Popover open={isColumnSelectorOpen} onOpenChange={setIsColumnSelectorOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns className="h-4 w-4 mr-2" />
+                    Columns
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="end">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm mb-3">Select Columns</h4>
+                    {allColumns.map((column) => (
+                      <div key={column.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={column.id}
+                          checked={visibleColumns.includes(column.id)}
+                          onCheckedChange={() => onToggleColumn(column.id)}
+                        />
+                        <label
+                          htmlFor={column.id}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {column.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
