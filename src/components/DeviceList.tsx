@@ -72,6 +72,8 @@ const DeviceList = () => {
       'apn', 'band', 'temperature', 'battery', 'heartbeat'
     ];
   });
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filters, setFilters] = useState<DeviceFilters>({
     search: '',
     status: 'all',
@@ -383,9 +385,26 @@ const DeviceList = () => {
     );
   };
 
+  const handleSort = (columnId: string) => {
+    if (sortColumn === columnId) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(columnId);
+      setSortDirection('asc');
+    }
+  };
+
+  const showAllColumns = () => {
+    setVisibleColumns(allColumns.map(col => col.id));
+  };
+
+  const hideAllColumns = () => {
+    setVisibleColumns([]);
+  };
+
   // Apply filters to devices
   const filteredDevices = useMemo(() => {
-    return devices.filter(device => {
+    let result = devices.filter(device => {
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
@@ -421,7 +440,70 @@ const DeviceList = () => {
 
       return true;
     });
-  }, [devices, filters]);
+
+    // Apply sorting
+    if (sortColumn) {
+      result = [...result].sort((a, b) => {
+        let aVal: any = null;
+        let bVal: any = null;
+
+        switch (sortColumn) {
+          case 'name':
+            aVal = a.name || a.devid;
+            bVal = b.name || b.devid;
+            break;
+          case 'devid':
+            aVal = a.devid;
+            bVal = b.devid;
+            break;
+          case 'hw_version':
+            aVal = a.hw_version || '';
+            bVal = b.hw_version || '';
+            break;
+          case 'sw_version':
+            aVal = a.sw_version || '';
+            bVal = b.sw_version || '';
+            break;
+          case 'iccid':
+            aVal = a.iccid || '';
+            bVal = b.iccid || '';
+            break;
+          case 'apn':
+            aVal = a.apn || '';
+            bVal = b.apn || '';
+            break;
+          case 'band':
+            aVal = a.band || 0;
+            bVal = b.band || 0;
+            break;
+          case 'temperature':
+            aVal = a.internal_temperature || 0;
+            bVal = b.internal_temperature || 0;
+            break;
+          case 'battery':
+            aVal = a.battery_level || 0;
+            bVal = b.battery_level || 0;
+            break;
+          case 'heartbeat':
+            aVal = a.heartbeat_interval || 0;
+            bVal = b.heartbeat_interval || 0;
+            break;
+        }
+
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortDirection === 'asc' 
+            ? aVal.localeCompare(bVal)
+            : bVal.localeCompare(aVal);
+        } else {
+          return sortDirection === 'asc' 
+            ? (aVal > bVal ? 1 : -1)
+            : (bVal > aVal ? 1 : -1);
+        }
+      });
+    }
+
+    return result;
+  }, [devices, filters, sortColumn, sortDirection]);
 
   const availableModes = useMemo(() => {
     const modes = devices.map(device => device.location_mode.toString()).filter(mode => mode !== null && mode !== undefined);
@@ -446,6 +528,8 @@ const DeviceList = () => {
           visibleColumns={visibleColumns}
           allColumns={allColumns}
           onToggleColumn={toggleColumn}
+          onShowAllColumns={showAllColumns}
+          onHideAllColumns={hideAllColumns}
         />
 
       {viewMode === 'grid' ? (
@@ -491,41 +575,147 @@ const DeviceList = () => {
               <thead className="bg-muted/50 border-b">
                 <tr>
                   {visibleColumns.includes('name') && (
-                    <th className="text-left p-3 text-sm font-medium">Device Name</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Device Name
+                        {sortColumn === 'name' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('devid') && (
-                    <th className="text-left p-3 text-sm font-medium">Device ID</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('devid')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Device ID
+                        {sortColumn === 'devid' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('hw_version') && (
-                    <th className="text-left p-3 text-sm font-medium">Hardware Version</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('hw_version')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Hardware Version
+                        {sortColumn === 'hw_version' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('sw_version') && (
-                    <th className="text-left p-3 text-sm font-medium">Software Version</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('sw_version')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Software Version
+                        {sortColumn === 'sw_version' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('iccid') && (
-                    <th className="text-left p-3 text-sm font-medium">ICCID</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('iccid')}
+                    >
+                      <div className="flex items-center gap-1">
+                        ICCID
+                        {sortColumn === 'iccid' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('apn') && (
-                    <th className="text-left p-3 text-sm font-medium">APN</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('apn')}
+                    >
+                      <div className="flex items-center gap-1">
+                        APN
+                        {sortColumn === 'apn' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('band') && (
-                    <th className="text-left p-3 text-sm font-medium">Band</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('band')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Band
+                        {sortColumn === 'band' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('temperature') && (
-                    <th className="text-left p-3 text-sm font-medium">Temperature</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('temperature')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Temperature
+                        {sortColumn === 'temperature' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('battery') && (
-                    <th className="text-left p-3 text-sm font-medium">Battery Voltage</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('battery')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Battery Voltage
+                        {sortColumn === 'battery' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
                   {visibleColumns.includes('heartbeat') && (
-                    <th className="text-left p-3 text-sm font-medium">Heartbeat Interval</th>
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      onClick={() => handleSort('heartbeat')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Heartbeat Interval
+                        {sortColumn === 'heartbeat' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                   )}
-                  <th className="text-left p-3 text-sm font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDevices.map((device) => (
-                  <tr key={device.devid} className="border-b hover:bg-muted/30 transition-colors">
+                  <tr 
+                    key={device.devid} 
+                    className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSelectedDeviceForConfig(device.devid);
+                      setIsConfigDialogOpen(true);
+                    }}
+                  >
                     {visibleColumns.includes('name') && (
                       <td className="p-3 text-sm">{device.name || '-'}</td>
                     )}
@@ -560,17 +750,6 @@ const DeviceList = () => {
                     {visibleColumns.includes('heartbeat') && (
                       <td className="p-3 text-sm">{formatHeartbeat(device.heartbeat_interval)}</td>
                     )}
-                    <td className="p-3">
-                      <button
-                        onClick={() => {
-                          setSelectedDeviceForConfig(device.devid);
-                          setIsConfigDialogOpen(true);
-                        }}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        View Details
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
