@@ -125,13 +125,9 @@ serve(async (req) => {
     const sigHeader = req.headers.get("x-signature") || "";
     const expected = await hmacSha256Hex(FLY_INGEST_SECRET, bodyBytes);
     const providedBytes = hexToBytes(sigHeader);
-    const expectedBytes = hexToBytes(expected);
-    // @ts-ignore timingSafeEqual available in Deno deploy
-    const valid = providedBytes.length === expectedBytes.length && (
-      typeof crypto.subtle.timingSafeEqual === 'function'
-        ? crypto.subtle.timingSafeEqual(providedBytes, expectedBytes)
-        : providedBytes.every((b, i) => b === expectedBytes[i])
-    );
+    const valid =
+      providedBytes.length === expectedBytes.length &&
+      providedBytes.every((b, i) => b === expectedBytes[i]);
 
     if (!valid) {
       console.warn("Invalid signature");

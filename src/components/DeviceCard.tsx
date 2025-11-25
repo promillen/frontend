@@ -199,9 +199,14 @@ const DeviceCard: React.FC<DeviceCardProps> = ({
     <Card
       className={`group relative overflow-hidden border-t-4 border-t-red-500 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${!isDetailsDialogOpen ? 'cursor-pointer' : ''} ${shouldLift ? "-translate-y-1 shadow-md" : ""}`}
       onClick={(e) => {
+        const target = e.target as HTMLElement;
+        const currentTarget = e.currentTarget as HTMLElement;
+
+        // Only handle clicks that originate from inside the card itself
+        if (!currentTarget.contains(target)) return;
+
         if (!isDetailsDialogOpen) {
-          const target = e.target as HTMLElement;
-          if (!target.closest('button') && !target.closest('[role="combobox"]')) {
+          if (!target.closest("button") && !target.closest('[role="combobox"]')) {
             e.stopPropagation();
             setIsDetailsDialogOpen(true);
           }
