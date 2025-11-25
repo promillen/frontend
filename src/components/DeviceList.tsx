@@ -10,6 +10,7 @@ import ErrorBoundary from './ErrorBoundary';
 import DeviceCard from './DeviceCard';
 import DeviceLogViewer from './DeviceLogViewer';
 import DeviceConfigDialog from './DeviceConfigDialog';
+import { DeviceDetailsDialog } from './DeviceDetailsDialog';
 import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
 import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
 
@@ -72,7 +73,7 @@ const DeviceList = () => {
       'apn', 'band', 'temperature', 'battery', 'heartbeat'
     ];
   });
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] = useState<string | null>('devid');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [filters, setFilters] = useState<DeviceFilters>({
     search: '',
@@ -85,6 +86,8 @@ const DeviceList = () => {
   const [isLogViewerOpen, setIsLogViewerOpen] = useState(false);
   const [selectedDeviceForConfig, setSelectedDeviceForConfig] = useState<string | null>(null);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
+  const [selectedDeviceForDetails, setSelectedDeviceForDetails] = useState<DeviceConfig | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const { toast } = useToast();
   const { role, canModifyData } = useUserRole();
   const { getEnabledDataTypes } = useDataTypeSelection();
@@ -712,8 +715,8 @@ const DeviceList = () => {
                     key={device.devid} 
                     className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
                     onClick={() => {
-                      setSelectedDeviceForConfig(device.devid);
-                      setIsConfigDialogOpen(true);
+                      setSelectedDeviceForDetails(device);
+                      setIsDetailsDialogOpen(true);
                     }}
                   >
                     {visibleColumns.includes('name') && (
@@ -764,12 +767,12 @@ const DeviceList = () => {
         </div>
       )}
 
-       {devices.length === 0 && (
-         <div className="text-center py-8">
-           <p className="text-gray-500">No devices found. Add your first device to get started.</p>
-         </div>
-       )}
-        
+         {devices.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No devices found. Add your first device to get started.</p>
+          </div>
+        )}
+         
         {/* Device Configuration Dialog */}
         <DeviceConfigDialog
           deviceId={selectedDeviceForConfig}
@@ -789,6 +792,17 @@ const DeviceList = () => {
             setSelectedDeviceForLogs(null);
           }}
         />
+
+        {/* Device Details Dialog (for list view) */}
+        {selectedDeviceForDetails && (
+          <DeviceDetailsDialog
+            open={isDetailsDialogOpen}
+            onOpenChange={setIsDetailsDialogOpen}
+            device={selectedDeviceForDetails}
+            role={role}
+            onDeviceUpdate={fetchDevices}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );
