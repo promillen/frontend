@@ -65,6 +65,13 @@ const DeviceList = () => {
     const saved = localStorage.getItem('deviceViewMode');
     return (saved === 'grid' || saved === 'list') ? saved : 'grid';
   });
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    const saved = localStorage.getItem('deviceTableColumns');
+    return saved ? JSON.parse(saved) : [
+      'name', 'devid', 'hw_version', 'sw_version', 'iccid', 
+      'apn', 'band', 'temperature', 'battery', 'heartbeat'
+    ];
+  });
   const [filters, setFilters] = useState<DeviceFilters>({
     search: '',
     status: 'all',
@@ -85,6 +92,11 @@ const DeviceList = () => {
   useEffect(() => {
     localStorage.setItem('deviceViewMode', viewMode);
   }, [viewMode]);
+
+  // Persist visible columns to localStorage
+  useEffect(() => {
+    localStorage.setItem('deviceTableColumns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   const fetchDevices = async () => {
     try {
@@ -337,6 +349,40 @@ const DeviceList = () => {
     return formatInTimeZone(new Date(dateString), 'Europe/Copenhagen', 'dd/MM/yyyy HH:mm:ss');
   };
 
+  const formatHeartbeat = (raw?: number | null) => {
+    const s = Number(raw ?? 0);
+    if (s <= 0) return "null";
+    if (s >= 86400) return "24h";
+    if (s >= 43200) return "12h";
+    if (s >= 21600) return "6h";
+    if (s >= 3600) return "1h";
+    if (s >= 1800) return "30m";
+    if (s >= 300) return "5m";
+    if (s >= 60) return "1m";
+    return `${s}s`;
+  };
+
+  const allColumns = [
+    { id: 'name', label: 'Device Name' },
+    { id: 'devid', label: 'Device ID' },
+    { id: 'hw_version', label: 'Hardware Version' },
+    { id: 'sw_version', label: 'Software Version' },
+    { id: 'iccid', label: 'ICCID' },
+    { id: 'apn', label: 'APN' },
+    { id: 'band', label: 'Band' },
+    { id: 'temperature', label: 'Temperature' },
+    { id: 'battery', label: 'Battery Voltage' },
+    { id: 'heartbeat', label: 'Heartbeat Interval' },
+  ];
+
+  const toggleColumn = (columnId: string) => {
+    setVisibleColumns(prev => 
+      prev.includes(columnId)
+        ? prev.filter(id => id !== columnId)
+        : [...prev, columnId]
+    );
+  };
+
   // Apply filters to devices
   const filteredDevices = useMemo(() => {
     return devices.filter(device => {
@@ -397,43 +443,141 @@ const DeviceList = () => {
           canAddDevice={role === 'admin' || role === 'moderator' || role === 'developer'}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          visibleColumns={visibleColumns}
+          allColumns={allColumns}
+          onToggleColumn={toggleColumn}
         />
 
-      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'flex flex-col gap-4'}>
-        {filteredDevices.map((device) => {
-          const deviceConfig = getDeviceConfig(device.devid);
-          return (
-            <DeviceCard
-              key={device.devid}
-              device={device}
-              enabledDataTypes={deviceConfig.enabledDataTypes}
-              role={role}
-              editingDevice={editingDevice}
-              editName={editName}
-              onEditClick={handleEditClick}
-              onSaveEdit={handleSaveEdit}
-              onCancelEdit={handleCancelEdit}
-              onNameChange={setEditName}
-              onModeUpdate={updateDeviceMode}
-              onHeartbeatUpdate={updateHeartbeatInterval}
-              onSensorTypeUpdate={updateSensorType}
-              onViewLogs={(devid) => {
-                setSelectedDeviceForLogs(devid);
-                setIsLogViewerOpen(true);
-              }}
-              onConfigureDevice={(devid) => {
-                setSelectedDeviceForConfig(devid);
-                setIsConfigDialogOpen(true);
-              }}
-              getStatusBadge={getStatusBadge}
-              getBatteryColor={getBatteryColor}
-              isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
-              isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
-              onDeviceUpdate={fetchDevices}
-            />
-          );
-        })}
-      </div>
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredDevices.map((device) => {
+            const deviceConfig = getDeviceConfig(device.devid);
+            return (
+              <DeviceCard
+                key={device.devid}
+                device={device}
+                enabledDataTypes={deviceConfig.enabledDataTypes}
+                role={role}
+                editingDevice={editingDevice}
+                editName={editName}
+                onEditClick={handleEditClick}
+                onSaveEdit={handleSaveEdit}
+                onCancelEdit={handleCancelEdit}
+                onNameChange={setEditName}
+                onModeUpdate={updateDeviceMode}
+                onHeartbeatUpdate={updateHeartbeatInterval}
+                onSensorTypeUpdate={updateSensorType}
+                onViewLogs={(devid) => {
+                  setSelectedDeviceForLogs(devid);
+                  setIsLogViewerOpen(true);
+                }}
+                onConfigureDevice={(devid) => {
+                  setSelectedDeviceForConfig(devid);
+                  setIsConfigDialogOpen(true);
+                }}
+                getStatusBadge={getStatusBadge}
+                getBatteryColor={getBatteryColor}
+                isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
+                isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
+                onDeviceUpdate={fetchDevices}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden bg-card">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50 border-b">
+                <tr>
+                  {visibleColumns.includes('name') && (
+                    <th className="text-left p-3 text-sm font-medium">Device Name</th>
+                  )}
+                  {visibleColumns.includes('devid') && (
+                    <th className="text-left p-3 text-sm font-medium">Device ID</th>
+                  )}
+                  {visibleColumns.includes('hw_version') && (
+                    <th className="text-left p-3 text-sm font-medium">Hardware Version</th>
+                  )}
+                  {visibleColumns.includes('sw_version') && (
+                    <th className="text-left p-3 text-sm font-medium">Software Version</th>
+                  )}
+                  {visibleColumns.includes('iccid') && (
+                    <th className="text-left p-3 text-sm font-medium">ICCID</th>
+                  )}
+                  {visibleColumns.includes('apn') && (
+                    <th className="text-left p-3 text-sm font-medium">APN</th>
+                  )}
+                  {visibleColumns.includes('band') && (
+                    <th className="text-left p-3 text-sm font-medium">Band</th>
+                  )}
+                  {visibleColumns.includes('temperature') && (
+                    <th className="text-left p-3 text-sm font-medium">Temperature</th>
+                  )}
+                  {visibleColumns.includes('battery') && (
+                    <th className="text-left p-3 text-sm font-medium">Battery Voltage</th>
+                  )}
+                  {visibleColumns.includes('heartbeat') && (
+                    <th className="text-left p-3 text-sm font-medium">Heartbeat Interval</th>
+                  )}
+                  <th className="text-left p-3 text-sm font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDevices.map((device) => (
+                  <tr key={device.devid} className="border-b hover:bg-muted/30 transition-colors">
+                    {visibleColumns.includes('name') && (
+                      <td className="p-3 text-sm">{device.name || '-'}</td>
+                    )}
+                    {visibleColumns.includes('devid') && (
+                      <td className="p-3 text-sm font-mono">{device.devid}</td>
+                    )}
+                    {visibleColumns.includes('hw_version') && (
+                      <td className="p-3 text-sm font-mono">{device.hw_version || 'N/A'}</td>
+                    )}
+                    {visibleColumns.includes('sw_version') && (
+                      <td className="p-3 text-sm font-mono">{device.sw_version || 'N/A'}</td>
+                    )}
+                    {visibleColumns.includes('iccid') && (
+                      <td className="p-3 text-sm font-mono">{device.iccid || 'N/A'}</td>
+                    )}
+                    {visibleColumns.includes('apn') && (
+                      <td className="p-3 text-sm font-mono">{device.apn || 'N/A'}</td>
+                    )}
+                    {visibleColumns.includes('band') && (
+                      <td className="p-3 text-sm font-mono">{device.band || 'N/A'}</td>
+                    )}
+                    {visibleColumns.includes('temperature') && (
+                      <td className="p-3 text-sm">
+                        {device.internal_temperature !== null ? `${device.internal_temperature}°C` : 'N/A'}
+                      </td>
+                    )}
+                    {visibleColumns.includes('battery') && (
+                      <td className="p-3 text-sm">
+                        {device.battery_level !== null ? `${(device.battery_level / 1000).toFixed(3)} V` : 'N/A'}
+                      </td>
+                    )}
+                    {visibleColumns.includes('heartbeat') && (
+                      <td className="p-3 text-sm">{formatHeartbeat(device.heartbeat_interval)}</td>
+                    )}
+                    <td className="p-3">
+                      <button
+                        onClick={() => {
+                          setSelectedDeviceForConfig(device.devid);
+                          setIsConfigDialogOpen(true);
+                        }}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {filteredDevices.length === 0 && devices.length > 0 && (
         <div className="text-center py-8">
