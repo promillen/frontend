@@ -44,14 +44,35 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     );
   };
 
+  const groupLogsByUplink = (logs: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    logs.forEach(log => {
+      const key = log.uplink_count !== null && log.uplink_count !== undefined 
+        ? `uplink_${log.uplink_count}` 
+        : `no_uplink_${log.id}`;
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(log);
+    });
+    return grouped;
+  };
+
 
   if (!isOpen || !deviceId || !canModifyData) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }}>
-      <Card className="w-[90vw] max-w-6xl h-[85vh] bg-card shadow-2xl border-2">
+    <div 
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm" 
+      style={{ top: 0, left: 0, right: 0, bottom: 0, margin: 0, padding: 0 }}
+      onClick={onClose}
+    >
+      <Card 
+        className="w-[90vw] max-w-6xl h-[85vh] bg-card shadow-2xl border-2"
+        onClick={(e) => e.stopPropagation()}
+      >
         <CardHeader className="pb-3 border-b">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -94,39 +115,58 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                     No database logs found for this device
                   </div>
                 ) : (
-                  sortLogsByTimestamp(databaseLogs).map((log) => (
-                    <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-muted/10 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Badge variant={getLogTypeColor(log.type)} className="text-xs font-medium">
-                            {log.type.toUpperCase()}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground font-mono">
-                            {formatTimestamp(log.timestamp)}
-                          </span>
-                          {log.uplink_count && (
-                            <Badge variant="outline" className="text-xs">
-                              Uplink #{log.uplink_count}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-primary/30">
-                        {log.message}
-                      </div>
-                      {log.data && (
-                        <details className="group">
-                          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                            <span>▶</span>
-                            Raw Data
-                          </summary>
-                          <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
-                            <pre>{JSON.stringify(log.data, null, 2)}</pre>
+                  (() => {
+                    const sortedLogs = sortLogsByTimestamp(databaseLogs);
+                    const groupedLogs = groupLogsByUplink(sortedLogs);
+                    const sortedGroups = Object.entries(groupedLogs).sort((a, b) => {
+                      const aTimestamp = Math.max(...a[1].map(log => new Date(log.timestamp).getTime()));
+                      const bTimestamp = Math.max(...b[1].map(log => new Date(log.timestamp).getTime()));
+                      return bTimestamp - aTimestamp;
+                    });
+
+                    return sortedGroups.map(([key, logs]) => (
+                      <div key={key} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-muted/10 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            {logs[0].uplink_count !== null && logs[0].uplink_count !== undefined && (
+                              <Badge variant="outline" className="text-xs font-semibold">
+                                Uplink #{logs[0].uplink_count}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {logs.length} log{logs.length > 1 ? 's' : ''}
+                            </span>
                           </div>
-                        </details>
-                      )}
-                    </div>
-                  ))
+                        </div>
+                        {logs.map((log) => (
+                          <div key={log.id} className="space-y-2 pl-2 border-l-2 border-muted">
+                            <div className="flex items-center gap-3">
+                              <Badge variant={getLogTypeColor(log.type)} className="text-xs font-medium">
+                                {log.type.toUpperCase()}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground font-mono">
+                                {formatTimestamp(log.timestamp)}
+                              </span>
+                            </div>
+                            <div className="font-mono text-sm bg-muted/30 p-3 rounded border-l-4 border-l-primary/30">
+                              {log.message}
+                            </div>
+                            {log.data && (
+                              <details className="group">
+                                <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                                  <span>▶</span>
+                                  Raw Data
+                                </summary>
+                                <div className="mt-2 font-mono text-xs text-muted-foreground bg-muted/20 p-3 rounded overflow-x-auto">
+                                  <pre>{JSON.stringify(log.data, null, 2)}</pre>
+                                </div>
+                              </details>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ));
+                  })()
                 )}
               </div>
             </ScrollArea>
