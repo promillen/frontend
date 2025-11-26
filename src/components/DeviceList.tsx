@@ -69,7 +69,7 @@ const DeviceList = () => {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const saved = localStorage.getItem('deviceTableColumns');
     return saved ? JSON.parse(saved) : [
-      'name', 'devid', 'hw_version', 'sw_version', 'iccid', 
+      'name', 'description', 'devid', 'hw_version', 'sw_version', 'iccid', 
       'apn', 'band', 'temperature', 'battery', 'heartbeat', 'last_seen'
     ];
   });
@@ -369,6 +369,7 @@ const DeviceList = () => {
 
   const allColumns = [
     { id: 'name', label: 'Device Name' },
+    { id: 'description', label: 'Description' },
     { id: 'devid', label: 'Device ID' },
     { id: 'hw_version', label: 'Hardware Version' },
     { id: 'sw_version', label: 'Software Version' },
@@ -455,6 +456,10 @@ const DeviceList = () => {
           case 'name':
             aVal = a.name || a.devid;
             bVal = b.name || b.devid;
+            break;
+          case 'description':
+            aVal = a.description || '';
+            bVal = b.description || '';
             break;
           case 'devid':
             aVal = a.devid;
@@ -584,7 +589,7 @@ const DeviceList = () => {
                 <tr>
                   {visibleColumns.includes('name') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[140px]"
                       onClick={() => handleSort('name')}
                     >
                       <div className="flex items-center gap-1">
@@ -595,9 +600,22 @@ const DeviceList = () => {
                       </div>
                     </th>
                   )}
+                  {visibleColumns.includes('description') && (
+                    <th 
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[180px]"
+                      onClick={() => handleSort('description')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Description
+                        {sortColumn === 'description' && (
+                          <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
+                  )}
                   {visibleColumns.includes('devid') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[140px]"
                       onClick={() => handleSort('devid')}
                     >
                       <div className="flex items-center gap-1">
@@ -610,7 +628,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('hw_version') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[120px]"
                       onClick={() => handleSort('hw_version')}
                     >
                       <div className="flex items-center gap-1">
@@ -623,7 +641,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('sw_version') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[120px]"
                       onClick={() => handleSort('sw_version')}
                     >
                       <div className="flex items-center gap-1">
@@ -636,7 +654,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('iccid') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[180px]"
                       onClick={() => handleSort('iccid')}
                     >
                       <div className="flex items-center gap-1">
@@ -649,7 +667,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('apn') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[100px]"
                       onClick={() => handleSort('apn')}
                     >
                       <div className="flex items-center gap-1">
@@ -662,7 +680,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('band') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[100px]"
                       onClick={() => handleSort('band')}
                     >
                       <div className="flex items-center gap-1">
@@ -675,7 +693,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('temperature') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[130px]"
                       onClick={() => handleSort('temperature')}
                     >
                       <div className="flex items-center gap-1">
@@ -688,7 +706,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('battery') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[100px]"
                       onClick={() => handleSort('battery')}
                     >
                       <div className="flex items-center gap-1">
@@ -701,7 +719,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('heartbeat') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[120px]"
                       onClick={() => handleSort('heartbeat')}
                     >
                       <div className="flex items-center gap-1">
@@ -714,7 +732,7 @@ const DeviceList = () => {
                   )}
                   {visibleColumns.includes('last_seen') && (
                     <th 
-                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none"
+                      className="text-left p-3 text-sm font-medium cursor-pointer hover:bg-muted/70 select-none min-w-[180px]"
                       onClick={() => handleSort('last_seen')}
                     >
                       <div className="flex items-center gap-1">
@@ -739,6 +757,9 @@ const DeviceList = () => {
                   >
                     {visibleColumns.includes('name') && (
                       <td className="p-3 text-sm">{device.name || '-'}</td>
+                    )}
+                    {visibleColumns.includes('description') && (
+                      <td className="p-3 text-sm">{device.description || 'N/A'}</td>
                     )}
                     {visibleColumns.includes('devid') && (
                       <td className="p-3 text-sm font-mono">{device.devid}</td>
