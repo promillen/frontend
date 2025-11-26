@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { X, Database, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { X, Database, RefreshCw, Search } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useDeviceLogs } from '@/hooks/useDeviceLogs';
 
@@ -20,6 +21,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
 }) => {
   const { canModifyData } = useUserRole();
   const { logs: databaseLogs, loading, error, refetch, getLogTypeColor } = useDeviceLogs(deviceId);
+  const [searchTerm, setSearchTerm] = useState('');
 
 
   const formatTimestamp = (timestamp: string) => {
@@ -42,6 +44,30 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
     return [...logs].sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+  };
+
+  const filterLogs = (logs: any[]) => {
+    if (!searchTerm.trim()) return logs;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return logs.filter(log => {
+      // Search in log type
+      if (log.type.toLowerCase().includes(searchLower)) return true;
+      
+      // Search in message
+      if (log.message.toLowerCase().includes(searchLower)) return true;
+      
+      // Search in uplink count
+      if (log.uplink_count && log.uplink_count.toString().includes(searchLower)) return true;
+      
+      // Search in data (stringified JSON)
+      if (log.data) {
+        const dataStr = JSON.stringify(log.data).toLowerCase();
+        if (dataStr.includes(searchLower)) return true;
+      }
+      
+      return false;
+    });
   };
 
 
@@ -72,6 +98,15 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
         </CardHeader>
         <CardContent className="pt-4 flex flex-col h-[calc(85vh-80px)]">
             <div className="flex gap-2 mb-4 pt-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search logs by type, message, uplink, or data..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -80,7 +115,7 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                 className="hover:bg-primary/10"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh Database Logs
+                Refresh
               </Button>
             </div>
 
@@ -100,8 +135,19 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                   <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
                     No database logs found for this device
                   </div>
-                ) : (
-                  sortLogsByTimestamp(databaseLogs).map((log) => (
+                ) : (() => {
+                  const sortedLogs = sortLogsByTimestamp(databaseLogs);
+                  const filteredLogs = filterLogs(sortedLogs);
+                  
+                  if (filteredLogs.length === 0) {
+                    return (
+                      <div className="text-sm text-muted-foreground text-center py-8 bg-muted/5 rounded-lg">
+                        No logs found matching "{searchTerm}"
+                      </div>
+                    );
+                  }
+                  
+                  return filteredLogs.map((log) => (
                     <div key={log.id} className="bg-card/50 border rounded-lg p-4 space-y-3 hover:bg-muted/10 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -133,13 +179,18 @@ const DeviceLogViewer: React.FC<DeviceLogViewerProps> = ({
                         </details>
                       )}
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             </ScrollArea>
 
             <div className="text-sm text-muted-foreground p-3 bg-muted/20 rounded border-t flex-shrink-0">
-              {databaseLogs.length} database entries • Last updated: {formatTimestamp(new Date().toISOString())}
+              {(() => {
+                const filteredCount = filterLogs(databaseLogs).length;
+                return searchTerm 
+                  ? `${filteredCount} of ${databaseLogs.length} entries shown • Last updated: ${formatTimestamp(new Date().toISOString())}`
+                  : `${databaseLogs.length} database entries • Last updated: ${formatTimestamp(new Date().toISOString())}`;
+              })()}
             </div>
         </CardContent>
       </Card>
