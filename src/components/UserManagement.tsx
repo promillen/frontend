@@ -18,6 +18,7 @@ interface UserProfile {
   full_name: string;
   created_at: string;
   updated_at: string;
+  last_login: string | null;
   user_roles: {
     role: 'admin' | 'moderator' | 'user' | 'developer';
   }[];
@@ -227,7 +228,7 @@ const UserManagement = () => {
                     <th className="text-left p-3 text-sm font-medium min-w-[180px]">Username</th>
                     <th className="text-left p-3 text-sm font-medium min-w-[200px]">Email</th>
                     <th className="text-left p-3 text-sm font-medium min-w-[120px]">Role</th>
-                    <th className="text-left p-3 text-sm font-medium min-w-[160px]">Last Updated</th>
+                    <th className="text-left p-3 text-sm font-medium min-w-[160px]">Last Login</th>
                     <th className="text-left p-3 text-sm font-medium min-w-[100px]">Actions</th>
                   </tr>
                 </thead>
@@ -242,7 +243,7 @@ const UserManagement = () => {
                           {user.user_roles?.[0]?.role || 'No role'}
                         </span>
                       </td>
-                      <td className="p-3 text-sm">{formatDate(user.updated_at)}</td>
+                      <td className="p-3 text-sm">{user.last_login ? formatDate(user.last_login) : 'Never'}</td>
                       <td className="p-3 text-sm">
                         <div className="flex items-center gap-2">
                           <Button
