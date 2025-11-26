@@ -584,7 +584,7 @@ const DeviceList = () => {
       ) : (
         <div className="border rounded-lg overflow-hidden bg-card">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-max">
               <thead className="bg-muted/50 border-b">
                 <tr>
                   {visibleColumns.includes('name') && (
