@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, UserPlus } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface UserProfile {
@@ -35,6 +35,11 @@ const UserManagement = () => {
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [editedName, setEditedName] = useState('');
   const [editedRole, setEditedRole] = useState<'admin' | 'moderator' | 'user' | 'developer'>('user');
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'admin' | 'moderator' | 'user' | 'developer'>('user');
 
   const fetchUsers = async () => {
     try {
@@ -183,6 +188,65 @@ const UserManagement = () => {
     });
   };
 
+  const handleAddUser = async () => {
+    if (!newUserEmail || !newUserPassword || !newUserName) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          data: {
+            full_name: newUserName
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('User creation failed');
+
+      // The profile should be created automatically by the trigger
+      // Wait a bit for the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Update the role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: newUserRole })
+        .eq('user_id', authData.user.id);
+
+      if (roleError) throw roleError;
+
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+
+      // Reset form
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserRole('user');
+      setAddUserDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (canManageUsers) {
       fetchUsers();
@@ -216,7 +280,13 @@ const UserManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>User Management</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>User Management</CardTitle>
+            <Button onClick={() => setAddUserDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="border rounded-lg overflow-hidden bg-card">
@@ -325,6 +395,77 @@ const UserManagement = () => {
             </Button>
             <Button onClick={handleSaveEdit}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account with email and password
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-name">Full Name *</Label>
+              <Input
+                id="new-name"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                placeholder="Enter full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">Email *</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder="user@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Password *</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+                placeholder="Enter password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-role">Role</Label>
+              <Select value={newUserRole} onValueChange={(value: any) => setNewUserRole(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="moderator">Moderator</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="developer">Developer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setAddUserDialogOpen(false);
+              setNewUserName('');
+              setNewUserEmail('');
+              setNewUserPassword('');
+              setNewUserRole('user');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser}>
+              Create User
             </Button>
           </DialogFooter>
         </DialogContent>
