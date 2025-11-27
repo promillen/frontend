@@ -92,7 +92,6 @@ class SupabaseClient:
         try:
             activity = {
                 "devid": devid,
-                "uplink_count": uplink_count,
                 **{k: v for k, v in activity_data.items() if v is not None}
             }
             
@@ -207,6 +206,14 @@ async def store_uplink_to_supabase(data: Dict[str, Any]):
             task = client.insert_sensor_data(session, devid, uplink_count, "temperature", temperature_data)
             dependent_tasks.append(task)
             task_names.append("temperature")
+        
+        # Handle battery voltage sensor data
+        if data.get("device_config", {}).get("battery_level") is not None:
+            battery_voltage = data["device_config"]["battery_level"]
+            voltage_data = {"voltage": battery_voltage}
+            task = client.insert_sensor_data(session, devid, uplink_count, "battery_voltage", voltage_data)
+            dependent_tasks.append(task)
+            task_names.append("battery_voltage")
         
 # Handle WiFi/location payload via Edge Function (HERE + DB insert)
         if data.get("wifi"):

@@ -61,9 +61,8 @@ export const useDeviceLogs = (deviceId: string | null) => {
           id: log.id,
           timestamp: log.created_at || '',
           type: 'activity' as const,
-          message: `Activity: Sleep:${log.sleep}ms, Modem:${log.modem}ms, GNSS:${log.gnss}ms (uplink: ${log.uplink_count || 'N/A'})`,
-          data: { sleep: log.sleep, modem: log.modem, gnss: log.gnss, wifi: log.wifi, other: log.other },
-          uplink_count: log.uplink_count
+          message: `Activity: Sleep:${log.sleep}ms, Modem:${log.modem}ms, GNSS:${log.gnss}ms`,
+          data: { sleep: log.sleep, modem: log.modem, gnss: log.gnss, wifi: log.wifi, other: log.other }
         })),
         ...(rebootData || []).map(log => ({
           id: log.id,

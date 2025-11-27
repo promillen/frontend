@@ -41,17 +41,41 @@ export const BatteryVoltageGraph: React.FC<BatteryVoltageGraphProps> = ({
   const fetchBatteryData = async () => {
     setLoading(true);
     try {
-      // Fetch device config history (we'll need to query for historical battery data)
-      // For now, we'll just get the current battery level as a single point
+      // Fetch device config for current battery level
       const { data: deviceData } = await supabase
         .from("device_config")
         .select("battery_level, device_data_updated_at")
         .eq("devid", devid)
         .single();
 
+      // Fetch historical battery voltage data from sensor_data
+      const { data: sensorData } = await supabase
+        .from("sensor_data")
+        .select("data, created_at")
+        .eq("devid", devid)
+        .eq("data_type", "battery_voltage")
+        .order("created_at", { ascending: true })
+        .limit(100);
+
       const chartData: BatteryData[] = [];
 
-      // Add current battery voltage
+      // Add historical sensor voltage data
+      if (sensorData) {
+        sensorData.forEach((item) => {
+          const voltage = typeof item.data === "object" && item.data !== null 
+            ? (item.data as any).voltage 
+            : null;
+          
+          if (voltage !== null && voltage !== undefined) {
+            chartData.push({
+              timestamp: formatInTimeZone(new Date(item.created_at), "Europe/Copenhagen", "dd/MM HH:mm"),
+              voltage: voltage / 1000, // Convert mV to V
+            });
+          }
+        });
+      }
+
+      // Add current battery voltage as the latest point if available
       if (deviceData?.battery_level && deviceData?.device_data_updated_at) {
         chartData.push({
           timestamp: formatInTimeZone(
