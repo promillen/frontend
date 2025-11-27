@@ -117,7 +117,7 @@ const Dashboard = () => {
             </div>
           </header>
           
-          <main className={`flex-1 bg-gradient-to-br from-background to-muted/20 flex flex-col ${activeView === 'map' ? '' : 'p-6'} relative`}>
+          <main className={`flex-1 w-full overflow-x-hidden bg-gradient-to-br from-background to-muted/20 flex flex-col ${activeView === 'map' ? '' : 'p-6'} relative`}>
             {activeView === 'map' && (
               <div className="flex-1">
                 <MapView 
