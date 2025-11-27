@@ -582,7 +582,7 @@ const DeviceList = () => {
           })}
         </div>
       ) : (
-        <div className="w-full max-w-full">
+        <div className="w-full max-w-full overflow-x-hidden">
           <div className="border rounded-lg overflow-hidden bg-card">
             <div className="overflow-x-auto">
               <table className="w-full min-w-max">
