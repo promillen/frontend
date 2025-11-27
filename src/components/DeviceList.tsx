@@ -582,9 +582,10 @@ const DeviceList = () => {
           })}
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max">
+        <div className="w-full max-w-full">
+          <div className="border rounded-lg overflow-hidden bg-card">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-max">
               <thead className="bg-muted/50 border-b">
                 <tr>
                   {visibleColumns.includes('name') && (
@@ -801,6 +802,7 @@ const DeviceList = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
