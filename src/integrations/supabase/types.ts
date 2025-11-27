@@ -23,7 +23,6 @@ export type Database = {
           modem: number | null
           other: number | null
           sleep: number | null
-          uplink_count: number | null
           wifi: number | null
         }
         Insert: {
@@ -34,7 +33,6 @@ export type Database = {
           modem?: number | null
           other?: number | null
           sleep?: number | null
-          uplink_count?: number | null
           wifi?: number | null
         }
         Update: {
@@ -45,7 +43,6 @@ export type Database = {
           modem?: number | null
           other?: number | null
           sleep?: number | null
-          uplink_count?: number | null
           wifi?: number | null
         }
         Relationships: [
