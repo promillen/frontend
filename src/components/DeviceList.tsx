@@ -586,37 +586,51 @@ const DeviceList = () => {
             })}
           </div>
         ) : (
-          <div className="w-full max-w-full overflow-x-hidden">
-            <div className="border rounded-lg overflow-hidden bg-card">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-max">
-                  <thead className="bg-muted/50 border-b">
-                    <tr>
-                      {visibleColumns.includes('name') && <th className="text-left p-3 text-sm font-medium min-w-[140px]">Device Name</th>}
-                      {visibleColumns.includes('description') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">Description</th>}
-                      {visibleColumns.includes('devid') && <th className="text-left p-3 text-sm font-medium min-w-[140px]">Device ID</th>}
-                      {visibleColumns.includes('last_seen') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">Last Seen</th>}
+          <div className="w-full border rounded-lg overflow-hidden bg-card">
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+              <table className="w-full min-w-max">
+                <thead className="bg-muted/50 border-b sticky top-0 z-10">
+                  <tr>
+                    {visibleColumns.includes('name') && <th className="text-left p-3 text-sm font-medium min-w-[140px]">Device Name</th>}
+                    {visibleColumns.includes('description') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">Description</th>}
+                    {visibleColumns.includes('devid') && <th className="text-left p-3 text-sm font-medium min-w-[140px]">Device ID</th>}
+                    {visibleColumns.includes('hw_version') && <th className="text-left p-3 text-sm font-medium min-w-[120px]">Hardware Version</th>}
+                    {visibleColumns.includes('sw_version') && <th className="text-left p-3 text-sm font-medium min-w-[120px]">Software Version</th>}
+                    {visibleColumns.includes('iccid') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">ICCID</th>}
+                    {visibleColumns.includes('apn') && <th className="text-left p-3 text-sm font-medium min-w-[100px]">APN</th>}
+                    {visibleColumns.includes('band') && <th className="text-left p-3 text-sm font-medium min-w-[100px]">Band</th>}
+                    {visibleColumns.includes('temperature') && <th className="text-left p-3 text-sm font-medium min-w-[130px]">Temperature</th>}
+                    {visibleColumns.includes('battery') && <th className="text-left p-3 text-sm font-medium min-w-[100px]">Battery Voltage</th>}
+                    {visibleColumns.includes('heartbeat') && <th className="text-left p-3 text-sm font-medium min-w-[120px]">Heartbeat Interval</th>}
+                    {visibleColumns.includes('last_seen') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">Last Seen</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {devices.map((device) => (
+                    <tr 
+                      key={device.devid} 
+                      className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedDeviceForDetails(device);
+                        setIsDetailsDialogOpen(true);
+                      }}
+                    >
+                      {visibleColumns.includes('name') && <td className="p-3 text-sm">{device.name || '-'}</td>}
+                      {visibleColumns.includes('description') && <td className="p-3 text-sm">{device.description || 'N/A'}</td>}
+                      {visibleColumns.includes('devid') && <td className="p-3 text-sm font-mono">{device.devid}</td>}
+                      {visibleColumns.includes('hw_version') && <td className="p-3 text-sm font-mono">{device.hw_version || 'N/A'}</td>}
+                      {visibleColumns.includes('sw_version') && <td className="p-3 text-sm font-mono">{device.sw_version || 'N/A'}</td>}
+                      {visibleColumns.includes('iccid') && <td className="p-3 text-sm font-mono">{device.iccid || 'N/A'}</td>}
+                      {visibleColumns.includes('apn') && <td className="p-3 text-sm">{device.apn || 'N/A'}</td>}
+                      {visibleColumns.includes('band') && <td className="p-3 text-sm">{device.band ?? 'N/A'}</td>}
+                      {visibleColumns.includes('temperature') && <td className="p-3 text-sm">{device.internal_temperature !== null ? `${device.internal_temperature}°C` : 'N/A'}</td>}
+                      {visibleColumns.includes('battery') && <td className="p-3 text-sm">{device.battery_level !== null ? `${(device.battery_level / 1000).toFixed(3)} V` : 'N/A'}</td>}
+                      {visibleColumns.includes('heartbeat') && <td className="p-3 text-sm">{formatHeartbeat(device.heartbeat_interval)}</td>}
+                      {visibleColumns.includes('last_seen') && <td className="p-3 text-sm">{device.last_seen ? formatDanishTime(device.last_seen) : 'N/A'}</td>}
                     </tr>
-                  </thead>
-                  <tbody>
-                    {devices.map((device) => (
-                      <tr 
-                        key={device.devid} 
-                        className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setSelectedDeviceForDetails(device);
-                          setIsDetailsDialogOpen(true);
-                        }}
-                      >
-                        {visibleColumns.includes('name') && <td className="p-3 text-sm">{device.name || '-'}</td>}
-                        {visibleColumns.includes('description') && <td className="p-3 text-sm">{device.description || 'N/A'}</td>}
-                        {visibleColumns.includes('devid') && <td className="p-3 text-sm font-mono">{device.devid}</td>}
-                        {visibleColumns.includes('last_seen') && <td className="p-3 text-sm">{device.last_seen ? formatDanishTime(device.last_seen) : 'N/A'}</td>}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -701,11 +715,10 @@ const DeviceList = () => {
           })}
         </div>
       ) : (
-        <div className="w-full max-w-full overflow-x-hidden">
-          <div className="border rounded-lg overflow-hidden bg-card">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-max">
-              <thead className="bg-muted/50 border-b">
+        <div className="w-full border rounded-lg overflow-hidden bg-card">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table className="w-full min-w-max">
+              <thead className="bg-muted/50 border-b sticky top-0 z-10">
                 <tr>
                   {visibleColumns.includes('name') && (
                     <th 
@@ -894,10 +907,10 @@ const DeviceList = () => {
                       <td className="p-3 text-sm font-mono">{device.iccid || 'N/A'}</td>
                     )}
                     {visibleColumns.includes('apn') && (
-                      <td className="p-3 text-sm font-mono">{device.apn || 'N/A'}</td>
+                      <td className="p-3 text-sm">{device.apn || 'N/A'}</td>
                     )}
                     {visibleColumns.includes('band') && (
-                      <td className="p-3 text-sm font-mono">{device.band || 'N/A'}</td>
+                      <td className="p-3 text-sm">{device.band ?? 'N/A'}</td>
                     )}
                     {visibleColumns.includes('temperature') && (
                       <td className="p-3 text-sm">
@@ -921,11 +934,10 @@ const DeviceList = () => {
                 ))}
               </tbody>
             </table>
-              </div>
-            </div>
           </div>
-        )}
-        </>
+        </div>
+      )}
+      </>
       )}
 
       {filteredDevices.length === 0 && devices.length > 0 && !isDeveloper && (
