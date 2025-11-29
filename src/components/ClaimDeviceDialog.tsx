@@ -12,18 +12,26 @@ interface ClaimDeviceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onDeviceClaimed: () => void;
+  prefilledCode?: string;
 }
 
 type ClaimStep = 'input' | 'waiting' | 'configuration' | 'success';
 
-export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed }: ClaimDeviceDialogProps) => {
-  const [activationCode, setActivationCode] = useState('');
+export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed, prefilledCode }: ClaimDeviceDialogProps) => {
+  const [activationCode, setActivationCode] = useState(prefilledCode || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState<ClaimStep>('input');
   const [deviceInfo, setDeviceInfo] = useState<{ device_id: string; device_name?: string } | null>(null);
   const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null);
   const [showScanner, setShowScanner] = useState(false);
   const { toast } = useToast();
+
+  // Update activation code when prefilledCode changes
+  useEffect(() => {
+    if (prefilledCode) {
+      setActivationCode(prefilledCode);
+    }
+  }, [prefilledCode]);
 
   // Clear polling interval on unmount or dialog close
   useEffect(() => {
@@ -144,7 +152,10 @@ export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed }: ClaimDev
       setPollingInterval(null);
     }
     
-    setActivationCode('');
+    // Only reset if there's no prefilled code
+    if (!prefilledCode) {
+      setActivationCode('');
+    }
     setCurrentStep('input');
     setDeviceInfo(null);
     setShowScanner(false);

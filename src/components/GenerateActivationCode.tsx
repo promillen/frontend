@@ -49,8 +49,11 @@ export function GenerateActivationCode() {
         toast.success('Activation code generated successfully!');
       }
 
-      // Generate QR code
-      const qrUrl = await QRCode.toDataURL(data.activation_code, {
+      // Generate QR code with URL that includes the activation code
+      const baseUrl = window.location.origin;
+      const claimUrl = `${baseUrl}/claim?code=${encodeURIComponent(data.activation_code)}`;
+      
+      const qrUrl = await QRCode.toDataURL(claimUrl, {
         width: 300,
         margin: 2,
         color: {
@@ -147,6 +150,9 @@ export function GenerateActivationCode() {
                     alt="Activation QR Code" 
                     className="border rounded-lg p-2 bg-white"
                   />
+                  <p className="text-xs text-muted-foreground text-center max-w-xs">
+                    Scan this QR code to be directed to the claim page
+                  </p>
                   <Button
                     variant="outline"
                     onClick={handleDownloadQR}

@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TestRoleProvider } from "@/contexts/TestRoleContext";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
+import ClaimDevice from "./pages/ClaimDevice";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,11 @@ const App = () => (
               <Route path="/" element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/claim" element={
+                <ProtectedRoute>
+                  <ClaimDevice />
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
