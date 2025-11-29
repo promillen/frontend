@@ -84,6 +84,39 @@ export type Database = {
           },
         ]
       }
+      device_activations: {
+        Row: {
+          activation_code: string
+          claimed: boolean | null
+          claimed_at: string | null
+          created_at: string | null
+          device_id: string
+          id: string
+          owner_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          activation_code: string
+          claimed?: boolean | null
+          claimed_at?: string | null
+          created_at?: string | null
+          device_id: string
+          id?: string
+          owner_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          activation_code?: string
+          claimed?: boolean | null
+          claimed_at?: string | null
+          created_at?: string | null
+          device_id?: string
+          id?: string
+          owner_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       device_config: {
         Row: {
           apn: string | null
