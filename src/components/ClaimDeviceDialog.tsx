@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, QrCode } from 'lucide-react';
+import { QRScanner } from './QRScanner';
 
 interface ClaimDeviceDialogProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed }: ClaimDev
   const [currentStep, setCurrentStep] = useState<ClaimStep>('input');
   const [deviceInfo, setDeviceInfo] = useState<{ device_id: string; device_name?: string } | null>(null);
   const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
   const { toast } = useToast();
 
   // Clear polling interval on unmount or dialog close
@@ -127,6 +129,15 @@ export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed }: ClaimDev
     setCurrentStep('success');
   };
 
+  const handleQRScan = (code: string) => {
+    setActivationCode(code);
+    setShowScanner(false);
+    toast({
+      title: "QR Code Scanned",
+      description: "Activation code captured successfully",
+    });
+  };
+
   const handleClose = () => {
     if (pollingInterval) {
       clearInterval(pollingInterval);
@@ -136,6 +147,7 @@ export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed }: ClaimDev
     setActivationCode('');
     setCurrentStep('input');
     setDeviceInfo(null);
+    setShowScanner(false);
     
     if (currentStep === 'success') {
       onDeviceClaimed();
@@ -163,36 +175,60 @@ export const ClaimDeviceDialog = ({ isOpen, onClose, onDeviceClaimed }: ClaimDev
         </DialogHeader>
 
         {currentStep === 'input' && (
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="activation-code">Activation Code *</Label>
-                <Input
-                  id="activation-code"
-                  placeholder="Enter activation code"
-                  value={activationCode}
-                  onChange={(e) => setActivationCode(e.target.value)}
-                  required
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Claiming...
-                  </>
-                ) : (
-                  'Claim Device'
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
+          <>
+            {showScanner ? (
+              <QRScanner
+                onScan={handleQRScan}
+                onClose={() => setShowScanner(false)}
+              />
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="activation-code">Activation Code *</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="activation-code"
+                        placeholder="Enter activation code"
+                        value={activationCode}
+                        onChange={(e) => setActivationCode(e.target.value)}
+                        required
+                        autoComplete="off"
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowScanner(true)}
+                        title="Scan QR Code"
+                      >
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Enter the code manually or click the QR icon to scan
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={handleClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Claiming...
+                      </>
+                    ) : (
+                      'Claim Device'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </>
         )}
 
         {currentStep === 'waiting' && (
