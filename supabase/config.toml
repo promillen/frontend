@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.device-logs]
 verify_jwt = false
+
+[functions.generate-activation-code]
+verify_jwt = true
+
+[functions.claim-device]
+verify_jwt = true
