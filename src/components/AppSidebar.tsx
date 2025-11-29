@@ -1,4 +1,4 @@
-import { MapPin, List, Users, Settings, Home, Activity, BarChart3, ExternalLink, Send } from 'lucide-react';
+import { MapPin, List, Users, Settings, Home, Activity, BarChart3, ExternalLink, Send, QrCode } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTestRole } from '@/contexts/TestRoleContext';
@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/sidebar';
 
 interface AppSidebarProps {
-  activeView: 'map' | 'devices' | 'users' | 'settings';
-  onViewChange: (view: 'map' | 'devices' | 'users' | 'settings') => void;
+  activeView: 'map' | 'devices' | 'users' | 'settings' | 'activation';
+  onViewChange: (view: 'map' | 'devices' | 'users' | 'settings' | 'activation') => void;
 }
 
 const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
@@ -42,6 +42,10 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
 
   const adminItems = [
     { id: 'users', title: 'User Management', icon: Users, view: 'users' as const },
+  ];
+
+  const developerItems = [
+    { id: 'activation', title: 'Device Activation', icon: QrCode, view: 'activation' as const },
   ];
 
   const getNavClassName = (view: string) => {
@@ -113,6 +117,27 @@ const AppSidebar = ({ activeView, onViewChange }: AppSidebarProps) => {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      className={`${getNavClassName(item.view)} layout-transition hover:scale-[1.02] active:scale-[0.98]`}
+                      onClick={() => onViewChange(item.view)}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {!collapsed && <span className="layout-transition">{item.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {role === 'developer' && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Developer Tools</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {developerItems.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       className={`${getNavClassName(item.view)} layout-transition hover:scale-[1.02] active:scale-[0.98]`}

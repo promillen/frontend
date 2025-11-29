@@ -15,12 +15,13 @@ import TimeRangeSelector from '@/components/TimeRangeSelector';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import Settings from '@/components/Settings';
+import { GenerateActivationCode } from '@/components/GenerateActivationCode';
 
 const Dashboard = () => {
   const { loading: authLoading } = useAuth();
   const { loading: roleLoading, isActualDeveloper, isTestMode } = useUserRole();
   const { testRole, setTestRole } = useTestRole();
-  const [activeView, setActiveView] = useState<'map' | 'devices' | 'users' | 'settings'>('map');
+  const [activeView, setActiveView] = useState<'map' | 'devices' | 'users' | 'settings' | 'activation'>('map');
   
   // Device selection with localStorage persistence
   const { selectedDevices, setSelectedDevices, allDevices, isInitialized } = useDeviceSelection();
@@ -73,6 +74,7 @@ const Dashboard = () => {
                   {activeView === 'devices' && 'Devices'}
                   {activeView === 'users' && 'User Management'}
                   {activeView === 'settings' && 'Data Forwarding'}
+                  {activeView === 'activation' && 'Device Activation'}
                 </span>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -134,6 +136,12 @@ const Dashboard = () => {
             {activeView === 'users' && <UserManagement />}
             
             {activeView === 'settings' && <Settings />}
+            
+            {activeView === 'activation' && (
+              <div className="max-w-3xl mx-auto">
+                <GenerateActivationCode />
+              </div>
+            )}
           </main>
         </div>
       </div>
