@@ -11,6 +11,7 @@ import DeviceCard from './DeviceCard';
 import DeviceLogViewer from './DeviceLogViewer';
 import DeviceConfigDialog from './DeviceConfigDialog';
 import { DeviceDetailsDialog } from './DeviceDetailsDialog';
+import { AddDeviceDialog } from './AddDeviceDialog';
 import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
 import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
 
@@ -88,6 +89,7 @@ const DeviceList = () => {
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [selectedDeviceForDetails, setSelectedDeviceForDetails] = useState<DeviceConfig | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] = useState(false);
   const { toast } = useToast();
   const { role, canModifyData } = useUserRole();
   const { getEnabledDataTypes } = useDataTypeSelection();
@@ -536,6 +538,7 @@ const DeviceList = () => {
           availableModes={availableModes}
           onRefresh={fetchDevices}
           canAddDevice={role === 'admin' || role === 'moderator' || role === 'developer'}
+          onAddDevice={() => setIsAddDeviceDialogOpen(true)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           visibleColumns={visibleColumns}
@@ -849,6 +852,13 @@ const DeviceList = () => {
             onDeviceUpdate={fetchDevices}
           />
         )}
+
+        {/* Add Device Dialog */}
+        <AddDeviceDialog
+          isOpen={isAddDeviceDialogOpen}
+          onClose={() => setIsAddDeviceDialogOpen(false)}
+          onDeviceAdded={fetchDevices}
+        />
       </div>
     </ErrorBoundary>
   );

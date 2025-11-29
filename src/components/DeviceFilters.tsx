@@ -34,6 +34,7 @@ interface DeviceFiltersProps {
   availableModes: string[];
   onRefresh: () => void;
   canAddDevice: boolean;
+  onAddDevice: () => void;
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   visibleColumns: string[];
@@ -43,7 +44,7 @@ interface DeviceFiltersProps {
   onHideAllColumns: () => void;
 }
 
-const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, viewMode, onViewModeChange, visibleColumns, allColumns, onToggleColumn, onShowAllColumns, onHideAllColumns }: DeviceFiltersProps) => {
+const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRefresh, canAddDevice, onAddDevice, viewMode, onViewModeChange, visibleColumns, allColumns, onToggleColumn, onShowAllColumns, onHideAllColumns }: DeviceFiltersProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false);
 
@@ -83,6 +84,16 @@ const DeviceFiltersComponent = ({ filters, onFiltersChange, availableModes, onRe
             />
           </div>
           <div className="flex items-center gap-2">
+            {canAddDevice && (
+              <Button variant="default" size="sm" onClick={onAddDevice}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Device
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={onRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
