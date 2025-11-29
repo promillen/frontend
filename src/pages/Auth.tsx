@@ -34,6 +34,13 @@ const Auth = () => {
     
     if (redirectUrl) {
       try {
+        // Check if this is a relative URL (starts with /)
+        if (redirectUrl.startsWith('/')) {
+          console.log('Internal redirect to:', redirectUrl);
+          navigate(redirectUrl);
+          return;
+        }
+        
         // Check if this is a docs.moc-iot.com redirect
         const isDocsRedirect = redirectUrl.includes('docs.moc-iot.com');
         console.log('Is docs redirect?', isDocsRedirect, 'redirectUrl:', redirectUrl);
@@ -63,7 +70,7 @@ const Auth = () => {
             return;
           }
         } else {
-          // For other redirects, just go to the URL
+          // For other external redirects, just go to the URL
           window.location.href = redirectUrl;
           return;
         }
