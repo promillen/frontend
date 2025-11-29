@@ -11,9 +11,10 @@ import DeviceCard from './DeviceCard';
 import DeviceLogViewer from './DeviceLogViewer';
 import DeviceConfigDialog from './DeviceConfigDialog';
 import { DeviceDetailsDialog } from './DeviceDetailsDialog';
-import { AddDeviceDialog } from './AddDeviceDialog';
+import { ClaimDeviceDialog } from './ClaimDeviceDialog';
 import { useDeviceConfiguration } from '@/hooks/useDeviceConfiguration';
 import { useDataTypeSelection } from '@/hooks/useDataTypeSelection';
+import { useCategorizedDevices } from '@/hooks/useCategorizedDevices';
 
 interface DeviceConfig {
   devid: string;
@@ -89,11 +90,12 @@ const DeviceList = () => {
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [selectedDeviceForDetails, setSelectedDeviceForDetails] = useState<DeviceConfig | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] = useState(false);
+  const [isClaimDeviceDialogOpen, setIsClaimDeviceDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { role, canModifyData } = useUserRole();
+  const { role, canModifyData, isDeveloper } = useUserRole();
   const { getEnabledDataTypes } = useDataTypeSelection();
   const { getDeviceConfig } = useDeviceConfiguration();
+  const { categories: deviceCategories, loading: categoriesLoading } = useCategorizedDevices(isDeveloper);
 
   // Persist view mode to localStorage
   useEffect(() => {
@@ -410,6 +412,12 @@ const DeviceList = () => {
   };
 
   // Apply filters to devices
+  // Filter devices by category for developers
+  const getDevicesByCategory = (category: 'noActivationCode' | 'unclaimedWithCode' | 'claimedByStaff') => {
+    const deviceIds = deviceCategories[category];
+    return devices.filter(device => deviceIds.includes(device.devid));
+  };
+
   const filteredDevices = useMemo(() => {
     let result = devices.filter(device => {
       // Search filter
@@ -529,6 +537,93 @@ const DeviceList = () => {
     return <LoadingSkeleton type="list" count={6} />;
   }
 
+  // Render device category section for developers
+  const renderDeviceCategory = (title: string, devices: DeviceConfig[], description: string) => {
+    if (devices.length === 0) return null;
+    
+    return (
+      <div className="space-y-4">
+        <div className="border-l-4 border-primary pl-4">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground mt-1">{devices.length} device(s)</p>
+        </div>
+        
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {devices.map((device) => {
+              const deviceConfig = getDeviceConfig(device.devid);
+              return (
+                <DeviceCard
+                  key={device.devid}
+                  device={device}
+                  enabledDataTypes={deviceConfig.enabledDataTypes}
+                  role={role}
+                  editingDevice={editingDevice}
+                  editName={editName}
+                  onEditClick={handleEditClick}
+                  onSaveEdit={handleSaveEdit}
+                  onCancelEdit={handleCancelEdit}
+                  onNameChange={setEditName}
+                  onModeUpdate={updateDeviceMode}
+                  onHeartbeatUpdate={updateHeartbeatInterval}
+                  onSensorTypeUpdate={updateSensorType}
+                  onViewLogs={(devid) => {
+                    setSelectedDeviceForLogs(devid);
+                    setIsLogViewerOpen(true);
+                  }}
+                  onConfigureDevice={(devid) => {
+                    setSelectedDeviceForConfig(devid);
+                    setIsConfigDialogOpen(true);
+                  }}
+                  getStatusBadge={getStatusBadge}
+                  getBatteryColor={getBatteryColor}
+                  isLogViewerOpen={selectedDeviceForLogs === device.devid && isLogViewerOpen}
+                  isConfigDialogOpen={selectedDeviceForConfig === device.devid && isConfigDialogOpen}
+                  onDeviceUpdate={fetchDevices}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="w-full max-w-full overflow-x-hidden">
+            <div className="border rounded-lg overflow-hidden bg-card">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-max">
+                  <thead className="bg-muted/50 border-b">
+                    <tr>
+                      {visibleColumns.includes('name') && <th className="text-left p-3 text-sm font-medium min-w-[140px]">Device Name</th>}
+                      {visibleColumns.includes('description') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">Description</th>}
+                      {visibleColumns.includes('devid') && <th className="text-left p-3 text-sm font-medium min-w-[140px]">Device ID</th>}
+                      {visibleColumns.includes('last_seen') && <th className="text-left p-3 text-sm font-medium min-w-[180px]">Last Seen</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {devices.map((device) => (
+                      <tr 
+                        key={device.devid} 
+                        className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedDeviceForDetails(device);
+                          setIsDetailsDialogOpen(true);
+                        }}
+                      >
+                        {visibleColumns.includes('name') && <td className="p-3 text-sm">{device.name || '-'}</td>}
+                        {visibleColumns.includes('description') && <td className="p-3 text-sm">{device.description || 'N/A'}</td>}
+                        {visibleColumns.includes('devid') && <td className="p-3 text-sm font-mono">{device.devid}</td>}
+                        {visibleColumns.includes('last_seen') && <td className="p-3 text-sm">{device.last_seen ? formatDanishTime(device.last_seen) : 'N/A'}</td>}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <ErrorBoundary>
       <div className="space-y-6">
@@ -538,7 +633,7 @@ const DeviceList = () => {
           availableModes={availableModes}
           onRefresh={fetchDevices}
           canAddDevice={role === 'admin' || role === 'moderator' || role === 'developer'}
-          onAddDevice={() => setIsAddDeviceDialogOpen(true)}
+          onAddDevice={() => setIsClaimDeviceDialogOpen(true)}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           visibleColumns={visibleColumns}
@@ -548,9 +643,30 @@ const DeviceList = () => {
           onHideAllColumns={hideAllColumns}
         />
 
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredDevices.map((device) => {
+      {/* Developer categorized view */}
+      {isDeveloper && !categoriesLoading ? (
+        <div className="space-y-8">
+          {renderDeviceCategory(
+            'Devices Without Activation Code',
+            getDevicesByCategory('noActivationCode'),
+            'These devices exist in the system but have not been assigned an activation code yet.'
+          )}
+          {renderDeviceCategory(
+            'Devices With Activation Code (Unclaimed)',
+            getDevicesByCategory('unclaimedWithCode'),
+            'These devices have an activation code but have not been claimed yet.'
+          )}
+          {renderDeviceCategory(
+            'Devices Claimed by Staff',
+            getDevicesByCategory('claimedByStaff'),
+            'These devices have been claimed by moderators, admins, or developers.'
+          )}
+        </div>
+      ) : (
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDevices.map((device) => {
             const deviceConfig = getDeviceConfig(device.devid);
             return (
               <DeviceCard
@@ -805,12 +921,14 @@ const DeviceList = () => {
                 ))}
               </tbody>
             </table>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+        </>
       )}
 
-      {filteredDevices.length === 0 && devices.length > 0 && (
+      {filteredDevices.length === 0 && devices.length > 0 && !isDeveloper && (
         <div className="text-center py-8">
           <p className="text-gray-500">No devices found matching your search.</p>
         </div>
@@ -853,11 +971,11 @@ const DeviceList = () => {
           />
         )}
 
-        {/* Add Device Dialog */}
-        <AddDeviceDialog
-          isOpen={isAddDeviceDialogOpen}
-          onClose={() => setIsAddDeviceDialogOpen(false)}
-          onDeviceAdded={fetchDevices}
+        {/* Claim Device Dialog */}
+        <ClaimDeviceDialog
+          isOpen={isClaimDeviceDialogOpen}
+          onClose={() => setIsClaimDeviceDialogOpen(false)}
+          onDeviceClaimed={fetchDevices}
         />
       </div>
     </ErrorBoundary>
